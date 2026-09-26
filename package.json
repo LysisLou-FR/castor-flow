@@ -1,0 +1,26 @@
+{
+  "name": "castor-flow",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test tests/*.test.js",
+    "android": "vite build && cap sync android && cap open android"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^8.1.0",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@revenuecat/purchases-capacitor": "^13.6.1",
+    "phaser": "^4.2.1",
+    "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "vite": "^8.3.1"
+  }
+}

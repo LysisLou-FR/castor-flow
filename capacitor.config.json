@@ -1,0 +1,8 @@
+{
+  "appId": "com.castorflow.app",
+  "appName": "Castor Flow",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#7ec8e3"
+  }
+}

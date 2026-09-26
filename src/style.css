@@ -1,0 +1,353 @@
+:root {
+  --sky: #9fd8ef;
+  --wood: #c8955a;
+  --wood-dark: #6b4420;
+  --cream: #fff6e8;
+  --green: #4caf50;
+  --green-dark: #2e7d32;
+  --text: #3a2a1a;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--sky);
+  user-select: none;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+/* ---------- Écrans ---------- */
+
+.screen {
+  height: 100%;
+  overflow-y: auto;
+  padding: calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.screen h2 {
+  font-size: 1.8rem;
+  color: var(--wood-dark);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.nuts {
+  background: var(--cream);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-weight: 800;
+  box-shadow: 0 3px 0 rgb(0 0 0 / 0.15);
+}
+
+.hint {
+  margin: 0;
+  color: var(--wood-dark);
+}
+
+/* ---------- Boutons ---------- */
+
+.btn {
+  font: inherit;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--text);
+  background: var(--cream);
+  border: none;
+  border-radius: 16px;
+  padding: 14px 20px;
+  min-height: 48px;
+  box-shadow: 0 5px 0 #d6c3a5;
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 #d6c3a5;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--wood-dark);
+  outline-offset: 3px;
+}
+
+.btn-primary {
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 5px 0 var(--green-dark);
+}
+
+.btn-primary:active:not(:disabled) {
+  box-shadow: 0 1px 0 var(--green-dark);
+}
+
+.btn-big {
+  font-size: 1.35rem;
+  padding: 18px 24px;
+}
+
+.btn-small {
+  font-size: 1rem;
+  padding: 8px 14px;
+  min-height: 44px;
+}
+
+.btn-ghost {
+  background: transparent;
+  box-shadow: none;
+  text-decoration: underline;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---------- Menu ---------- */
+
+.menu {
+  justify-content: space-between;
+  background: linear-gradient(var(--sky) 55%, var(--wood) 55%);
+  max-width: none;
+}
+
+.menu > * {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.hero {
+  text-align: center;
+}
+
+.logo {
+  font-size: 6rem;
+  line-height: 1;
+  animation: bob 1.4s ease-in-out infinite;
+}
+
+.hero h1 {
+  font-size: clamp(2.6rem, 12vw, 3.6rem);
+  color: #fff;
+  -webkit-text-stroke: 2px var(--wood-dark);
+  paint-order: stroke fill;
+  text-shadow: 0 5px 0 var(--wood-dark);
+}
+
+.hero p {
+  font-size: 1.1rem;
+  max-width: 30ch;
+  margin: 12px auto 0;
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-10px) rotate(-4deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo {
+    animation: none;
+  }
+}
+
+/* ---------- Niveaux ---------- */
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.level-card {
+  font: inherit;
+  border: none;
+  border-radius: 18px;
+  background: var(--cream);
+  box-shadow: 0 5px 0 #d6c3a5;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.level-card:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.thumb {
+  display: grid;
+  width: 100%;
+  max-width: 110px;
+  aspect-ratio: 1;
+  align-content: end;
+  gap: 1px;
+}
+
+.thumb i {
+  aspect-ratio: 1;
+  border-radius: 2px;
+}
+
+.level-name {
+  font-weight: 800;
+}
+
+/* ---------- Jeu ---------- */
+
+.game-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--wood);
+}
+
+.game-view .topbar {
+  padding: 8px 12px;
+  background: var(--sky);
+}
+
+.level-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.level-info strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progress {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.6);
+  overflow: hidden;
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+  transition: width 0.2s;
+}
+
+.stage {
+  flex: 1;
+  min-height: 0;
+  background: linear-gradient(var(--sky) 50%, var(--wood) 50%);
+}
+
+/* ---------- Fenêtres ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(40 25 10 / 0.55);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 10;
+}
+
+.modal {
+  background: var(--cream);
+  border-radius: 24px;
+  padding: 24px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 8px 0 #d6c3a5;
+  animation: pop 0.25s ease-out;
+}
+
+.modal p {
+  margin: 10px 0 20px;
+}
+
+.modal-emoji {
+  font-size: 3.5rem;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* ---------- Boutique ---------- */
+
+.shop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--cream);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 5px 0 #d6c3a5;
+}
+
+.shop-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.shop-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-text p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+}
