@@ -370,35 +370,39 @@ export function makeGhostTexture(scene, key) {
   )
 }
 
-/** Cube du plan mis en évidence par le bonus « Indice » : toutes les faces et un contour pointillé. */
+/** Marge (px) du halo de l'indice autour du cube, dans sa texture. */
+export const HINT_GLOW_PAD = 26
+
+/**
+ * Halo blanc lumineux du bonus « Indice », posé autour d'un cube à sa vraie couleur.
+ * Même géométrie qu'un cube, avec une marge plus grande pour le flou.
+ */
 export function makeHintTexture(scene, key) {
-  addCanvas(
-    scene,
-    key,
-    cubeCanvas((ctx, p) => {
-      poly(ctx, [p.b, p.r, p.rb, p.bb])
-      ctx.fillStyle = 'rgba(255,255,255,0.95)'
-      ctx.fill()
-      poly(ctx, [p.l, p.b, p.bb, p.lb])
-      ctx.fillStyle = 'rgba(215,215,215,0.9)'
-      ctx.fill()
-      poly(ctx, [p.t, p.r, p.b, p.l])
-      ctx.fillStyle = 'rgba(255,255,255,0.85)'
-      ctx.fill()
-      ctx.setLineDash([10, 7])
-      ctx.strokeStyle = '#ffffff'
-      ctx.lineWidth = 4
-      poly(ctx, [p.t, p.r, p.rb, p.bb, p.lb, p.l])
-      ctx.stroke()
-      ctx.beginPath()
-      ctx.moveTo(...p.l)
-      ctx.lineTo(...p.b)
-      ctx.lineTo(...p.r)
-      ctx.moveTo(...p.b)
-      ctx.lineTo(...p.bb)
-      ctx.stroke()
-    }),
-  )
+  const { w, top, h } = CUBE_TEX
+  const pad = HINT_GLOW_PAD
+  const [c, ctx] = canvas(w + pad * 2, top + h + pad * 2)
+  ctx.translate(pad, pad)
+  const p = cubePoints()
+  ctx.lineJoin = 'round'
+  ctx.strokeStyle = '#ffffff'
+  ctx.shadowColor = 'rgba(255,255,255,0.95)'
+  ctx.shadowBlur = 20
+  ctx.lineWidth = 8
+  for (let n = 0; n < 2; n++) {
+    poly(ctx, [p.t, p.r, p.rb, p.bb, p.lb, p.l])
+    ctx.stroke()
+  }
+  ctx.shadowBlur = 0
+  ctx.lineWidth = 3
+  ctx.strokeStyle = 'rgba(255,255,255,0.8)'
+  ctx.beginPath()
+  ctx.moveTo(...p.l)
+  ctx.lineTo(...p.b)
+  ctx.lineTo(...p.r)
+  ctx.moveTo(...p.b)
+  ctx.lineTo(...p.bb)
+  ctx.stroke()
+  addCanvas(scene, key, c)
 }
 
 /**

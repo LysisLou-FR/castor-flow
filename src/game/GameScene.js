@@ -259,20 +259,25 @@ export class GameScene extends Phaser.Scene {
     const active = this.hintLeft > 0
     // recalculé à chaque image : un cube posé débloque aussitôt la case du dessus
     const open = new Set(active ? this.board.frontierCells() : [])
-    // posés par-dessus le calque du plan : jamais moins visibles que lui
-    const pulse = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(time * 0.008))
+    // Chaque case accessible montre le vrai cube (vraie couleur, même taille que le cube du plan)
+    // entouré d'un halo blanc, qui pulse et rebondit légèrement : bien visible, quel que soit le dessin.
+    const s = 0.5 + 0.5 * Math.sin(time * 0.008)
     this.ghosts.forEach((ghost, i) => {
-      let img = this.hintImages[i]
+      let hint = this.hintImages[i]
       if (!open.has(i)) {
-        img?.setVisible(false)
+        hint?.cube.setVisible(false)
+        hint?.glow.setVisible(false)
         return
       }
-      img ??= this.hintImages[i] = this.add
-        .image(0, 0, 'ghost-hint')
-        .setOrigin(ghost.originX, ghost.originY)
-        .setTint(ghost.color)
-        .setDepth(DEPTH.wall + ghost.order + 0.001)
-      img.setVisible(true).setPosition(ghost.x, ghost.y).setScale(ghost.scaleX).setAlpha(pulse)
+      // origine au centre du cube (textures de marges symétriques) : calé exactement sur le fantôme
+      hint ??= this.hintImages[i] = {
+        cube: this.add.image(0, 0, `cube-${this.parsed.cells[i]}`).setOrigin(0.5, 0.5),
+        glow: this.add.image(0, 0, 'ghost-hint').setOrigin(0.5, 0.5),
+      }
+      const y = ghost.y - this.tw * 0.05 * s
+      const depth = DEPTH.wall + ghost.order + 0.005
+      hint.cube.setVisible(true).setPosition(ghost.x, y).setScale(ghost.scaleX).setAlpha(0.6 + 0.4 * s).setDepth(depth)
+      hint.glow.setVisible(true).setPosition(ghost.x, y).setScale(ghost.scaleX).setAlpha(0.55 + 0.45 * s).setDepth(depth + 0.001)
     })
     this.hintShown = active
     if (!active) this.state.hint = false
