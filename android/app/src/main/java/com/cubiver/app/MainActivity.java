@@ -1,4 +1,4 @@
-package com.castorflow.app;
+package com.cubiver.app;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Castor Flow</string>
-    <string name="title_activity_main">Castor Flow</string>
-    <string name="package_name">com.castorflow.app</string>
-    <string name="custom_url_scheme">com.castorflow.app</string>
+    <string name="app_name">Cubiver</string>
+    <string name="title_activity_main">Cubiver</string>
+    <string name="package_name">com.cubiver.app</string>
+    <string name="custom_url_scheme">com.cubiver.app</string>
 </resources>

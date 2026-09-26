@@ -3,12 +3,13 @@ import { reactive, watch } from 'vue'
 // Sauvegarde locale de la progression.
 // Pour la production : @capacitor/preferences (plus fiable que localStorage sur Android)
 // ou Firebase pour une sauvegarde dans le cloud.
-const KEY = 'castor-flow-save-v1'
+const KEY = 'cubiver-save-v1'
+const OLD_KEY = 'castor-flow-save-v1' // nom du prototype : sa sauvegarde est reprise automatiquement
 const defaults = { unlocked: 1, nuts: 0, noAds: false, wins: 0 }
 
 function load() {
   try {
-    return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') }
+    return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY) || '{}') }
   } catch {
     return { ...defaults }
   }

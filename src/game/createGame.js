@@ -1,27 +1,59 @@
 import Phaser from 'phaser'
-import { GameScene, HEIGHT, WIDTH } from './GameScene.js'
+import { GameScene } from './GameScene.js'
+import { generateCrews } from './logic.js'
 
 /**
- * Monte une partie Phaser dans un élément HTML et renvoie une petite API pour Vue.
- * Phaser -> Vue : les callbacks onProgress / onWin / onLose.
- * Vue -> Phaser : les méthodes renvoyées (addSlot, destroy).
+ * Monte une partie Phaser dans un élément HTML.
+ *
+ * `state` est un objet réactif Vue partagé avec la scène :
+ *   lanes    : files d'équipes en attente  [[{ id, color, count }]]
+ *   slots    : places du chantier          [{ id, color, count, remaining, waiting } | null]
+ *   progress : 0 → 1
+ *   status   : 'playing' | 'stuck' | 'won'
+ * Phaser le modifie, Vue l'affiche. Vue agit sur le jeu via l'API renvoyée.
  */
-export function createGame(parent, { level, levelIndex, onProgress, onWin, onLose }) {
-  const bridge = { scene: null, onProgress, onWin, onLose }
+export function createGame(parent, { level, levelIndex, parsed, state, onWin, onLose }) {
+  Object.assign(state, {
+    lanes: generateCrews(parsed, { ...level, seed: levelIndex + 1 }),
+    slots: new Array(level.slots).fill(null),
+    progress: 0,
+    status: 'playing',
+    hint: false, // bonus « Indice » en cours
+  })
+
+  // Canvas à la résolution réelle de l'écran (net sur les téléphones haute densité)
+  const dpr = Math.min(window.devicePixelRatio || 1, 2.5)
+  const size = () => [Math.max(2, Math.round(parent.clientWidth * dpr)), Math.max(2, Math.round(parent.clientHeight * dpr))]
+  const [width, height] = size()
+
+  const bridge = { scene: null, onWin, onLose, insetTop: 64 * dpr }
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
-    width: WIDTH,
-    height: HEIGHT,
-    backgroundColor: '#9fd8ef',
+    width,
+    height,
+    transparent: true, // le ciel est dessiné en CSS derrière le canvas
     banner: false,
-    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+    scale: { mode: Phaser.Scale.NONE },
+    audio: { noAudio: true }, // pas encore de sons : évite de créer un AudioContext
   })
-  game.scene.add('game', GameScene, true, { level, levelIndex, bridge })
-  if (import.meta.env.DEV) window.castorDebug = bridge // inspection depuis la console du navigateur
+  game.scene.add('game', GameScene, true, { level, levelIndex, parsed, state, bridge })
+
+  const observer = new ResizeObserver(() => {
+    const [w, h] = size()
+    if (w !== game.scale.width || h !== game.scale.height) game.scale.resize(w, h)
+  })
+  observer.observe(parent)
+
+  if (import.meta.env.DEV) window.cubiverDebug = bridge // inspection depuis la console du navigateur
 
   return {
+    sendLane: (lane) => bridge.scene?.sendLane(lane) ?? false,
     addSlot: () => bridge.scene?.addSlot(),
-    destroy: () => game.destroy(true),
+    showHint: (ms) => bridge.scene?.showHint(ms),
+    destroy: () => {
+      observer.disconnect()
+      game.destroy(true)
+    },
   }
 }

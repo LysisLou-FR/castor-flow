@@ -1,4 +1,4 @@
-# 🦫 Castor Flow
+# 🦫 Cubiver
 
 Le concept de Colony Flow inversé : au lieu de fourmis qui mangent les cubes d'un dessin, des équipes de castors le **construisent**, bloc par bloc.
 
@@ -10,6 +10,7 @@ Le concept de Colony Flow inversé : au lieu de fourmis qui mangent les cubes d'
 - Touche une équipe de castors pour l'envoyer au **chantier**. Ses castors partent construire les cases accessibles de leur couleur.
 - Si une équipe ne trouve rien à construire, elle occupe sa place. Quand toutes les places sont prises et que plus personne ne peut construire, le **chantier est bloqué**.
 - Pour continuer : regarder une **pub récompensée** ou payer **30 noisettes**, et tu gagnes une place de plus.
+- Les cases accessibles ne sont pas signalées : c'est au joueur de lire le dessin. Le bonus **Indice** (bouton ampoule, 15 noisettes ou une pub récompensée) les illumine pendant 6 secondes. Les prix et la durée sont en haut de `src/components/GameView.vue`.
 
 ## Développement (navigateur)
 
@@ -19,7 +20,7 @@ npm run dev      # http://localhost:5173 ; pubs et achats simulés
 npm test         # tests de la logique + vérifie que chaque niveau est faisable
 ```
 
-Dans la console du navigateur, en mode développement, `castorDebug.scene` donne accès à la scène Phaser.
+Dans la console du navigateur, en mode développement, `cubiverDebug.scene` donne accès à la scène Phaser.
 
 ## Structure
 
@@ -58,6 +59,18 @@ Ajoute une entrée dans `src/game/levels.js` : une lettre = une couleur de `PALE
 > APK de debug en ligne de commande : `cd android` puis `gradlew assembleDebug`. Le fichier sort dans `android/app/build/outputs/apk/debug/`.
 
 Après chaque modification du code web, relance `npm run android` (ou `npm run build && npx cap sync android`).
+
+## Icône de l'application
+
+Le castor vient de `assets/icon-beaver.svg` : ton dessin, sans fond, en deux groupes, `head` (oreilles et tête) et `face` (le visage). Le script `scripts/build-icons.mjs` le pose sur un fond de cubes isométriques aux couleurs du jeu et génère `assets/icon-only.svg`. En haut du script, tu peux régler `BEAVER_SCALE` (taille du castor), `ADAPTIVE_SCALE` (sa taille dans l'icône adaptative) et `CUBE` (taille des cubes).
+
+Après une modification :
+
+```bash
+npm run icons
+```
+
+Cette commande génère les PNG sources dans `assets/`, toutes les icônes Android (icône adaptative et icône classique, pour chaque densité), et `assets/play-store-512.png` à envoyer sur la Play Console.
 
 ## Publicités (AdMob)
 

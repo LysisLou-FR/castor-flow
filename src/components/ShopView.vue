@@ -1,8 +1,12 @@
 <script setup>
 import { onMounted, ref } from 'vue'
+import { PALETTE } from '../game/levels.js'
 import { PRODUCTS, buy, isDemo, loadPrices, restore } from '../services/purchases.js'
 import { save } from '../store.js'
 import NutCounter from './NutCounter.vue'
+import AcornIcon from './ui/AcornIcon.vue'
+import BeaverMark from './ui/BeaverMark.vue'
+import Icon from './ui/Icon.vue'
 
 const emit = defineEmits(['back'])
 const prices = ref({})
@@ -44,31 +48,40 @@ async function restorePurchases() {
 
 <template>
   <main class="screen">
+    <div class="sky" aria-hidden="true"><i class="cloud c1"></i><i class="cloud c3"></i></div>
     <header class="topbar">
-      <button class="btn btn-small" @click="emit('back')">← Menu</button>
-      <NutCounter />
+      <button class="icon-btn glass" aria-label="Retour au menu" @click="emit('back')"><Icon name="back" /></button>
+      <h1 class="page-title">Boutique</h1>
+      <NutCounter class="glass" />
     </header>
-    <h2>Boutique</h2>
-    <p v-if="isDemo" class="hint">Mode démo : les achats sont simulés (aucun paiement).</p>
+
+    <section class="shop-hero glass">
+      <BeaverMark :size="78" :carry="PALETTE.Y" />
+      <div>
+        <h2>Soutiens la colonie</h2>
+        <p class="muted">Chaque achat aide un petit studio indépendant (et ses castors).</p>
+      </div>
+    </section>
+    <p v-if="isDemo" class="chip">Mode démo · aucun paiement réel</p>
 
     <div class="shop-list">
-      <article class="shop-item">
-        <div class="shop-icon" aria-hidden="true">🚫📺</div>
+      <article class="shop-item glass">
+        <span class="shop-icon noads"><Icon name="noads" :size="30" /></span>
         <div class="shop-text">
           <h3>{{ PRODUCTS.removeAds.title }}</h3>
-          <p>Plus aucune pub entre les niveaux. Les pubs récompensées restent disponibles si tu le souhaites.</p>
+          <p class="muted">Plus de pub entre les niveaux. Les pubs récompensées restent au choix.</p>
         </div>
-        <button v-if="save.noAds" class="btn btn-small" disabled>Activé ✓</button>
+        <button v-if="save.noAds" class="btn btn-soft btn-small" disabled><Icon name="check" :size="18" /> Activé</button>
         <button v-else class="btn btn-primary btn-small" :disabled="!!busy" @click="purchase(PRODUCTS.removeAds)">
           {{ prices[PRODUCTS.removeAds.id] ?? '…' }}
         </button>
       </article>
 
-      <article class="shop-item">
-        <div class="shop-icon" aria-hidden="true">🌰</div>
+      <article class="shop-item glass">
+        <span class="shop-icon nuts"><AcornIcon :size="34" /></span>
         <div class="shop-text">
           <h3>{{ PRODUCTS.nuts500.title }}</h3>
-          <p>De quoi agrandir ton chantier quand tes castors sont bloqués.</p>
+          <p class="muted">De quoi agrandir le chantier quand tes castors sont bloqués.</p>
         </div>
         <button class="btn btn-primary btn-small" :disabled="!!busy" @click="purchase(PRODUCTS.nuts500)">
           {{ prices[PRODUCTS.nuts500.id] ?? '…' }}
@@ -76,7 +89,7 @@ async function restorePurchases() {
       </article>
     </div>
 
-    <p v-if="message" class="hint" role="status">{{ message }}</p>
-    <button class="btn btn-ghost" :disabled="!!busy" @click="restorePurchases">Restaurer mes achats</button>
+    <p v-if="message" class="chip" role="status">{{ message }}</p>
+    <button class="btn btn-link" :disabled="!!busy" @click="restorePurchases">Restaurer mes achats</button>
   </main>
 </template>

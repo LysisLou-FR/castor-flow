@@ -123,7 +123,7 @@ export function generateCrews(parsed, { crewSize, queues, seed = 1 }) {
       if (color === EMPTY) continue
       let crew = open.get(color)
       if (!crew) {
-        crew = { color, count: 0 }
+        crew = { id: crews.length, color, count: 0 }
         crews.push(crew)
         open.set(color, crew)
       }

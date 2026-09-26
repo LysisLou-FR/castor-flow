@@ -2,16 +2,16 @@
 // La ligne du haut est la première du tableau ; les castors construisent de bas en haut.
 
 export const PALETTE = {
-  R: 0xe74c3c, // rouge
-  P: 0xff8fc0, // rose
-  O: 0xf39c12, // orange
-  Y: 0xf7d046, // jaune
-  G: 0x2ecc71, // vert
-  B: 0x3498db, // bleu
-  W: 0xf4f1ea, // blanc
-  K: 0x2c3e50, // noir
-  N: 0x8e5a2b, // brun
-  T: 0xd9a066, // beige
+  R: 0xff5d62, // rouge corail
+  P: 0xff9fcf, // rose
+  O: 0xffa33d, // orange
+  Y: 0xffd747, // jaune
+  G: 0x5ccf7b, // vert
+  B: 0x4ba6ff, // bleu
+  W: 0xf6f2ea, // blanc cassé
+  K: 0x3d4260, // encre
+  N: 0x9d6a43, // brun
+  T: 0xe6b988, // beige
 }
 
 export const LEVELS = [

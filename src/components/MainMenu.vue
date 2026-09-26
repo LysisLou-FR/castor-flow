@@ -1,32 +1,47 @@
 <script setup>
+import { computed } from 'vue'
 import { LEVELS } from '../game/levels.js'
 import { privacyOptionsRequired, showPrivacyOptions } from '../services/ads.js'
 import { save } from '../store.js'
 import NutCounter from './NutCounter.vue'
+import BeaverHead from './ui/BeaverHead.vue'
+import CubeBackdrop from './ui/CubeBackdrop.vue'
+import Icon from './ui/Icon.vue'
 
 const emit = defineEmits(['play', 'navigate'])
-
-function continueGame() {
-  emit('play', Math.min(save.unlocked, LEVELS.length) - 1)
-}
+const current = computed(() => Math.min(save.unlocked, LEVELS.length) - 1)
 </script>
 
 <template>
   <main class="screen menu">
+    <!-- même concept que l'icône de l'appli : la tête du castor sur un fond de cubes -->
+    <CubeBackdrop class="menu-backdrop" />
     <header class="topbar">
       <span></span>
-      <NutCounter />
+      <NutCounter class="glass" />
     </header>
-    <div class="hero">
-      <div class="logo" aria-hidden="true">🦫</div>
-      <h1>Castor Flow</h1>
-      <p>Envoie tes équipes de castors construire le dessin, bloc par bloc.</p>
-    </div>
-    <nav class="stack">
-      <button class="btn btn-primary btn-big" @click="continueGame">Jouer · niveau {{ Math.min(save.unlocked, LEVELS.length) }}</button>
-      <button class="btn" @click="emit('navigate', 'levels')">Niveaux</button>
-      <button class="btn" @click="emit('navigate', 'shop')">Boutique</button>
-      <button v-if="privacyOptionsRequired" class="btn btn-ghost" @click="showPrivacyOptions">Confidentialité et publicités</button>
+
+    <section class="hero">
+      <BeaverHead class="hero-head" :size="240" />
+      <h1>Cubi<span>ver</span></h1>
+      <p class="glass">Envoie tes équipes de castors construire le dessin, un bloc chacun.</p>
+    </section>
+
+    <nav class="menu-actions">
+      <button class="btn btn-primary btn-hero" @click="emit('play', current)">
+        <Icon name="play" :size="26" />
+        <span class="btn-stack">
+          <strong>Jouer</strong>
+          <small>Niveau {{ current + 1 }} · {{ LEVELS[current].name }}</small>
+        </span>
+      </button>
+      <div class="menu-row">
+        <button class="tile glass" @click="emit('navigate', 'levels')"><Icon name="grid" /> Niveaux</button>
+        <button class="tile glass" @click="emit('navigate', 'shop')"><Icon name="bag" /> Boutique</button>
+      </div>
+      <button v-if="privacyOptionsRequired" class="btn btn-link" @click="showPrivacyOptions">
+        <Icon name="shield" :size="16" /> Confidentialité et publicités
+      </button>
     </nav>
   </main>
 </template>
