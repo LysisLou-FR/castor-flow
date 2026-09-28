@@ -1,26 +1,35 @@
 <script setup>
-// Tête du castor de l'icône (assets/icon-beaver.svg), avec contour blanc et ombre douce :
-// même source que l'icône de l'appli, une retouche du dessin met à jour les deux.
-import source from '../../../assets/icon-beaver.svg?raw'
+// Tête du castor (tirée de ton dessin assets/castor.svg), avec contour blanc et ombre douce :
+// même source et même rendu que l'icône de l'appli (scripts/build-icons.mjs).
+import source from '../../../assets/castor.svg?raw'
+import { HEAD_BOX, castorHead } from '../../game/castorHead.js'
 
 defineProps({ size: { type: Number, default: 220 } })
 
-const group = (id) => source.match(new RegExp(`<g id="${id}"[^>]*>([\\s\\S]*?)</g>`))?.[1] ?? ''
-const head = group('head')
-const face = group('face')
-const OUTLINE = 44 // comme dans scripts/build-icons.mjs
+const head = castorHead(source)
+const OUTLINE = 26 // comme dans scripts/build-icons.mjs
+// cadre autour de la tête, avec la place du contour blanc et de l'ombre
+const box = { x: HEAD_BOX.cx - HEAD_BOX.w / 2 - 60, y: -60, w: HEAD_BOX.w + 120, h: 720 }
 </script>
 
 <template>
-  <svg class="beaver-head" :width="size" :height="size * (1140 / 1250)" viewBox="-113 -60 1250 1140" role="img" aria-label="Castor">
+  <svg
+    class="beaver-head"
+    :width="size"
+    :height="(size * box.h) / box.w"
+    :viewBox="`${box.x} ${box.y} ${box.w} ${box.h}`"
+    fill="none"
+    role="img"
+    aria-label="Castor"
+  >
     <defs>
       <filter id="beaver-head-soft" x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur stdDeviation="30" />
+        <feGaussianBlur stdDeviation="24" />
       </filter>
     </defs>
-    <ellipse cx="512" cy="650" rx="560" ry="440" fill="#3a2414" opacity="0.3" filter="url(#beaver-head-soft)" />
-    <g stroke="#ffffff" :stroke-width="OUTLINE * 2" stroke-linejoin="round" v-html="head" />
-    <g v-html="head" />
-    <g v-html="face" />
+    <g v-html="head.defs" />
+    <ellipse :cx="HEAD_BOX.cx" :cy="HEAD_BOX.cy + 70" rx="330" ry="250" fill="#3a2414" opacity="0.3" filter="url(#beaver-head-soft)" />
+    <g stroke="#ffffff" :stroke-width="OUTLINE * 2" stroke-linejoin="round" v-html="head.silhouette" />
+    <g v-html="head.content" />
   </svg>
 </template>

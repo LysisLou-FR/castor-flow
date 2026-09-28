@@ -1,4 +1,4 @@
-// Génère l'icône de l'appli : le castor (assets/icon-beaver.svg) sur un fond de cubes isométriques.
+// Génère l'icône de l'appli : la tête du castor (tirée de assets/castor.svg) sur un fond de cubes isométriques.
 //   assets/icon-only.svg / .png  icône complète (anciens Android, base du Play Store)
 //   assets/icon-background.png   calque de fond de l'icône adaptative (les cubes)
 //   assets/icon-foreground.png   calque de premier plan (le castor), dans la zone de sécurité
@@ -13,6 +13,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import sharp from 'sharp'
 import { PALETTE } from '../src/game/levels.js'
 import { hex, shade } from '../src/game/art.js'
+import { HEAD_BOX, castorHead } from '../src/game/castorHead.js'
 
 if (process.argv.includes('--fix-android')) {
   const xml = `<?xml version="1.0" encoding="utf-8"?>
@@ -36,32 +37,25 @@ if (process.argv.includes('--fix-android')) {
 }
 
 // ---------- Réglages ----------
-const BEAVER_SCALE = 0.74 // taille du castor dans l'icône complète (1 = dessin d'origine)
-const ADAPTIVE_SCALE = 0.5 // taille du castor dans le calque adaptatif (Android n'en montre que 72/108)
+const BEAVER_SCALE = 0.8 // largeur de la tête dans l'icône complète (1 = toute la largeur)
+const ADAPTIVE_SCALE = 0.54 // largeur de la tête dans le calque adaptatif (Android n'en montre que 72/108)
 const CUBE = 150 // largeur d'un cube du fond, en pixels (sur 1024)
 const CUBE_COLORS = ['R', 'O', 'Y', 'G', 'B', 'P'].map((k) => PALETTE[k])
 
 // ---------- Castor ----------
-const beaverSvg = readFileSync('assets/icon-beaver.svg', 'utf8')
-const group = (id) => {
-  const match = beaverSvg.match(new RegExp(`<g id="${id}"[^>]*>([\\s\\S]*?)</g>`))
-  if (!match) throw new Error(`groupe « ${id} » introuvable dans icon-beaver.svg`)
-  return match[1]
-}
-const HEAD_CENTER = [512, 522] // centre de la tête dans le dessin d'origine
-
-const OUTLINE = 44 // épaisseur du contour blanc autour de la tête (unités du dessin d'origine)
+const head = castorHead(readFileSync('assets/castor.svg', 'utf8'))
+const OUTLINE = 26 // épaisseur du contour blanc autour de la tête (unités du dessin)
 
 /**
- * Le castor réduit, centré en (cx, cy). Pour le détacher des cubes : une ombre douce, puis un contour
- * blanc (la tête tracée une première fois avec un trait blanc épais, ton dessin est posé par-dessus).
+ * La tête du castor, large de `width` (fraction de l'icône), centrée en (cx, cy). Pour la détacher des cubes :
+ * une ombre douce, puis un contour blanc (la silhouette tracée avec un trait blanc épais), ton dessin par-dessus.
  */
-function beaver(scale, cx, cy) {
-  return `<g transform="translate(${cx} ${cy}) scale(${scale}) translate(${-HEAD_CENTER[0]} ${-HEAD_CENTER[1]})">
-    <ellipse cx="512" cy="600" rx="560" ry="440" fill="#3a2414" opacity="0.3" filter="url(#soft)" transform="translate(0 50)" />
-    <g stroke="#ffffff" stroke-width="${OUTLINE * 2}" stroke-linejoin="round">${group('head')}</g>
-    ${group('head')}
-    ${group('face')}
+function beaver(width, cx, cy) {
+  const scale = (width * 1024) / HEAD_BOX.w
+  return `<g transform="translate(${cx} ${cy}) scale(${scale}) translate(${-HEAD_BOX.cx} ${-HEAD_BOX.cy})">
+    <ellipse cx="${HEAD_BOX.cx}" cy="${HEAD_BOX.cy + 70}" rx="330" ry="250" fill="#3a2414" opacity="0.3" filter="url(#soft)" />
+    <g stroke="#ffffff" stroke-width="${OUTLINE * 2}" stroke-linejoin="round">${head.silhouette}</g>
+    ${head.content}
   </g>`
 }
 
@@ -95,17 +89,18 @@ function cubes(size, w, seed = 7) {
 const defs = `<defs>
   <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="30"/></filter>
 </defs>`
-const svg = (content) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">${defs}${content}</svg>`
+const svg = (content) => `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 1024 1024" width="1024" height="1024">${defs}${head.defs}${content}</svg>`
 
-const icon = svg(cubes(1024, CUBE) + beaver(BEAVER_SCALE, 512, 540))
+const icon = svg(cubes(1024, CUBE) + beaver(BEAVER_SCALE, 512, 520))
 writeFileSync('assets/icon-only.svg', icon)
 
 const outputs = [
   ['assets/icon-only.png', icon, 1024],
   // calque de fond : des cubes un peu plus petits, car Android n'en montre que le centre
   ['assets/icon-background.png', svg(cubes(1024, CUBE * 0.67)), 1024],
-  ['assets/icon-foreground.png', svg(beaver(ADAPTIVE_SCALE, 512, 525)), 1024],
+  ['assets/icon-foreground.png', svg(beaver(ADAPTIVE_SCALE, 512, 512)), 1024],
   ['assets/play-store-512.png', icon, 512],
+  ['public/icon-192.png', icon, 192], // icône de l'onglet du navigateur
 ]
 for (const [file, source, size] of outputs) {
   await sharp(Buffer.from(source)).resize(size, size).png().toFile(file)

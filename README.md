@@ -36,7 +36,8 @@ src/
     logic.js        ← règles pures : grille, colonnes, génération des équipes
     study.js        ← joueurs simulés, solveur, réglage automatique (npm run study, npm run tune)
     GameScene.js    ← rendu et animations Phaser
-    art.js          ← castor, cubes, échafaudages, décor : tout est dessiné par code
+    art.js          ← cubes, échafaudages, décor : dessinés par code
+    beaverArt.js    ← le castor : ton dessin assets/castor.svg, découpé en vues (face, dos, pieds)
     island.js       ← socle de l'île (dégradés, arrondis)
     createGame.js   ← pont entre Phaser et Vue
   components/       ← écrans Vue : menu, niveaux, jeu, boutique
@@ -131,7 +132,7 @@ Après chaque modification du code web, relance `npm run android` (ou `npm run b
 
 ## Icône de l'application
 
-Le castor vient de `assets/icon-beaver.svg` : ton dessin, sans fond, en deux groupes, `head` (oreilles et tête) et `face` (le visage). Le script `scripts/build-icons.mjs` le pose sur un fond de cubes isométriques aux couleurs du jeu et génère `assets/icon-only.svg`. En haut du script, tu peux régler `BEAVER_SCALE` (taille du castor), `ADAPTIVE_SCALE` (sa taille dans l'icône adaptative) et `CUBE` (taille des cubes).
+La tête du castor est tirée de ton dessin `assets/castor.svg` (oreilles, tête, visage, touffes et mèche ; voir `src/game/castorHead.js`), le même que dans le jeu. Le script `scripts/build-icons.mjs` la pose, avec un contour blanc, sur un fond de cubes isométriques aux couleurs du jeu et génère `assets/icon-only.svg`. L'accueil affiche la même tête (`src/components/ui/BeaverHead.vue`). En haut du script, tu peux régler `BEAVER_SCALE` (largeur de la tête dans l'icône), `ADAPTIVE_SCALE` (sa largeur dans l'icône adaptative) et `CUBE` (taille des cubes).
 
 Après une modification :
 

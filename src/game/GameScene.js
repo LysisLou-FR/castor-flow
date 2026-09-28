@@ -2,12 +2,9 @@ import Phaser from 'phaser'
 import { Board, EMPTY } from './logic.js'
 import { paintIsland } from './island.js'
 import * as sfx from './sfx.js'
+import { BEAVER_RES, BEAVER_RIG, BEAVER_TEXTURES, PAD } from './beaverArt.js'
 import {
-  BEAVER_RES,
-  BEAVER_RIG,
   CUBE_TEX,
-  PAD,
-  makeBeaverTextures,
   makeCubeTexture,
   makeDecorTextures,
   makeGhostTexture,
@@ -36,6 +33,14 @@ const DEPTH = { ground: 0, ripple: 5, shadow: 90, wall: 100, actors: 200 }
 const lerp = (a, b, t) => a + (b - a) * t
 const u = (units) => units * BEAVER_RES // unités du castor -> pixels de texture
 
+// Vues du castor (ton dessin SVG) : une URL par texture, créée une seule fois
+const BEAVER_URLS = BEAVER_TEXTURES.map(([key, text, w, h]) => ({
+  key,
+  url: URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' })),
+  width: u(w + PAD * 2),
+  height: u(h + PAD * 2),
+}))
+
 export class GameScene extends Phaser.Scene {
   constructor() {
     super('game')
@@ -49,9 +54,12 @@ export class GameScene extends Phaser.Scene {
     this.bridge = bridge
   }
 
+  preload() {
+    for (const { key, url, width, height } of BEAVER_URLS) this.load.svg(key, url, { width, height })
+  }
+
   create() {
     this.bridge.scene = this
-    makeBeaverTextures(this)
     makeDecorTextures(this)
     makeGhostTexture(this, 'ghost')
     makeHintTexture(this, 'ghost-hint')
@@ -351,18 +359,21 @@ export class GameScene extends Phaser.Scene {
       .image(0, 0, `cube-${color}`)
       .setOrigin(0.5, 1)
       .setScale(u(BEAVER_RIG.cube.size) / (CUBE_TEX.w + CUBE_TEX.pad * 2))
-    // le cube est posé sur la tête, les pattes sont dessinées par-dessus pour le tenir
-    const paws = this.add.image(0, 0, 'bv-paws-back').setOrigin(...bodyOrigin)
-    const cont = this.add.container(0, 0, [backFoot, frontFoot, body, cube, paws])
+    // de face, couches : corps, cube tenu, patte droite, tête (par-dessus la patte droite), patte gauche ;
+    // de dos, seul le corps est affiché et le cube est porté sur le dos
+    const layer = (key) => this.add.image(0, 0, key).setOrigin(...bodyOrigin)
+    const pawRight = layer('bv-paw-right-hold')
+    const head = layer('bv-front-head')
+    const pawLeft = layer('bv-paws')
+    const cont = this.add.container(0, 0, [backFoot, frontFoot, body, cube, pawRight, head, pawLeft])
     const shadow = this.add.image(0, 0, 'shadow').setDepth(DEPTH.shadow)
 
     const b = {
       id: this.beaverId = (this.beaverId ?? 0) + 1,
       cont,
       shadow,
-      parts: { backFoot, body, frontFoot, cube, paws },
+      parts: { backFoot, body, frontFoot, cube, pawRight, head, pawLeft },
       carrying: true,
-      happy: false,
       gx: BANK + 0.6,
       gy: lane,
       z: -0.45,
@@ -424,19 +435,22 @@ export class GameScene extends Phaser.Scene {
   /** Vue (dos quand il va vers le mur, face quand il en revient) et expression du castor. */
   updateLook(b) {
     const view = b.face === 1 ? 'front' : 'back'
-    const key = view === 'back' ? 'bv-back' : b.carrying ? 'bv-front-carry' : b.happy ? 'bv-front-happy' : 'bv-front'
-    const { body, paws, cube, backFoot, frontFoot } = b.parts
-    if (body.texture.key !== key) body.setTexture(key)
+    const front = view === 'front'
+    const { body, cube, pawRight, head, pawLeft, backFoot, frontFoot } = b.parts
+    body.setTexture(front ? 'bv-front-body' : 'bv-back')
+    head.setVisible(front)
+    // de face : pattes sur les côtés du cube quand il le porte, sur le ventre quand il revient les mains vides
+    pawRight.setVisible(front && b.carrying)
+    pawLeft.setVisible(front).setTexture(b.carrying ? 'bv-paw-left-hold' : 'bv-paws')
     backFoot.setTexture(`bv-foot-${view}`)
     frontFoot.setTexture(`bv-foot-${view}`)
-    paws.setTexture(`bv-paws-${view}`).setVisible(b.carrying)
     cube.setVisible(b.carrying)
     b.view = view
   }
 
   /** Animation procédurale : pieds qui avancent dans la direction de marche, dandinement, rebond. */
   animateParts(b, anim, dt, k) {
-    const { backFoot, body, frontFoot, cube, paws } = b.parts
+    const { backFoot, body, frontFoot, cube, pawRight, head, pawLeft } = b.parts
     const rig = BEAVER_RIG
     const [dx, dy] = b.view === 'front' ? [1, 0.5] : [-1, -0.5] // direction de marche à l'écran
     let bodyY = 0
@@ -468,8 +482,7 @@ export class GameScene extends Phaser.Scene {
     }
     frontFoot.setPosition(u(rig.frontFoot.x + front[0]), u(rig.frontFoot.y + front[1]))
     backFoot.setPosition(u(rig.backFoot.x + back[0]), u(rig.backFoot.y + back[1]))
-    body.setPosition(0, u(bodyY)).setRotation(rot)
-    paws.setPosition(0, u(bodyY)).setRotation(rot)
+    for (const part of [body, pawRight, head, pawLeft]) part.setPosition(0, u(bodyY)).setRotation(rot)
     // le cube suit la tête : même rotation, autour du même pivot (le point au sol)
     const c = rig.cube[b.view]
     cube
@@ -496,7 +509,6 @@ export class GameScene extends Phaser.Scene {
   /** Le castor lâche son cube : il se pose dans le mur avec un petit rebond et de la poussière. */
   placeCube(b) {
     b.carrying = false
-    b.happy = true // il repartira tout content, de face
     this.updateLook(b)
     const i = b.cell
     this.board.build(i)

@@ -314,7 +314,7 @@ onBeforeUnmount(() => {
     <Transition name="fade">
       <div v-if="won" class="modal-backdrop">
         <section class="modal" role="dialog" aria-labelledby="win-title">
-          <div class="modal-art"><BeaverMark :size="96" happy /></div>
+          <div class="modal-art"><BeaverMark :size="96" /></div>
           <h2 id="win-title">Chef-d’œuvre&nbsp;!</h2>
           <p>« {{ level.name }} » est construit, bloc par bloc.</p>
           <p v-if="replayed" class="diff-note">Niveau déjà réussi : pas de récompense</p>
