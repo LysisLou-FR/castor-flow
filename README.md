@@ -41,7 +41,9 @@ src/
   services/
     ads.js          ← AdMob : vidéo récompensée, interstitiel, consentement RGPD
     purchases.js    ← RevenueCat : « Sans pubs », packs de noisettes, restauration
-  store.js          ← sauvegarde (localStorage)
+    platform.js     ← Android : bouton retour, passage en arrière-plan
+  store.js          ← sauvegarde (@capacitor/preferences sur Android, localStorage dans le navigateur)
+  lives.js          ← vies : perte, recharge, achat
 android/            ← projet Android Studio généré par Capacitor
 ```
 
@@ -147,6 +149,6 @@ Tant que `VITE_REVENUECAT_ANDROID_KEY` est vide, les achats sont simulés.
 
 - Sons : coups de marteau, « plouf », musique
 - Skins de castors à acheter avec des noisettes
-- Sauvegarde fiable avec `@capacitor/preferences` ou Firebase
+- Sauvegarde dans le cloud (Firebase) pour retrouver sa progression sur un autre téléphone
 - Éditeur de niveaux, ou conversion automatique d'une image en pixel art
 - Étoiles selon le nombre de places utilisées

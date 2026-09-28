@@ -6,6 +6,7 @@ import GameView from './components/GameView.vue'
 import ShopView from './components/ShopView.vue'
 import NoLivesModal from './components/NoLivesModal.vue'
 import { withLife } from './lives.js'
+import { useBack } from './services/platform.js'
 
 const screen = ref('menu') // menu | levels | game | shop
 const levelIndex = ref(0)
@@ -17,6 +18,13 @@ function play(index) {
     screen.value = 'game'
   })
 }
+
+// Bouton retour d'Android : niveaux et boutique reviennent au menu (la partie gère le sien)
+useBack(() => {
+  if (screen.value !== 'levels' && screen.value !== 'shop') return false
+  screen.value = 'menu'
+  return true
+})
 
 // En dev, le bouton « Tester » du map builder ouvre /?play=N pour lancer directement le niveau N
 if (import.meta.env.DEV) {

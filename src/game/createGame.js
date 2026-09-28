@@ -35,7 +35,7 @@ export function createGame(parent, { level, levelIndex, parsed, state, onWin, on
     transparent: true, // le ciel est dessiné en CSS derrière le canvas
     banner: false,
     scale: { mode: Phaser.Scale.NONE },
-    audio: { noAudio: true }, // pas encore de sons : évite de créer un AudioContext
+    audio: { noAudio: true }, // les sons passent par sfx.js (Web Audio), pas par Phaser
   })
   game.scene.add('game', GameScene, true, { level, levelIndex, parsed, state, bridge })
 
@@ -51,6 +51,7 @@ export function createGame(parent, { level, levelIndex, parsed, state, onWin, on
     sendLane: (lane) => bridge.scene?.sendLane(lane) ?? false,
     addSlot: () => bridge.scene?.addSlot(),
     showHint: (ms) => bridge.scene?.showHint(ms),
+    setPaused: (paused) => (paused ? game.pause() : game.resume()),
     destroy: () => {
       observer.disconnect()
       game.destroy(true)

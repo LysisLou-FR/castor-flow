@@ -20,13 +20,23 @@ function audio() {
     out.connect(comp).connect(ctx.destination)
   }
   // le navigateur suspend l'audio tant que le joueur n'a pas touché l'écran
-  if (ctx.state === 'suspended') ctx.resume()
+  if (ctx.state === 'suspended' && !paused) ctx.resume()
   return ctx
 }
 
 // Débloque l'audio au premier contact (obligatoire sur mobile)
 if (typeof window !== 'undefined') {
   window.addEventListener('pointerdown', () => audio(), { once: true, capture: true })
+}
+
+let paused = false
+
+/** Appli en arrière-plan : suspend l'audio (et le relance au retour). */
+export function setAudioPaused(value) {
+  paused = value
+  if (!ctx) return
+  if (paused) ctx.suspend()
+  else ctx.resume()
 }
 
 /** Renvoie le contexte audio si le son peut être joué (activé, pas trop rapproché du précédent). */

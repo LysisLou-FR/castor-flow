@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { version } from '../../package.json'
 import { pop } from '../game/sfx.js'
 import { privacyOptionsRequired, showPrivacyOptions } from '../services/ads.js'
+import { useBack } from '../services/platform.js'
 import { isDemo, restore } from '../services/purchases.js'
 import { save } from '../store.js'
 import Icon from './ui/Icon.vue'
@@ -11,6 +12,11 @@ const emit = defineEmits(['close'])
 const message = ref('')
 const busy = ref(false)
 const confirmReset = ref(false)
+
+useBack(() => {
+  emit('close')
+  return true
+}, 10)
 
 function toggleSound() {
   save.sound = !save.sound

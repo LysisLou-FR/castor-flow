@@ -7,6 +7,7 @@ import { createGame } from '../game/createGame.js'
 import * as sfx from '../game/sfx.js'
 import { endAttempt, startAttempt, withLife } from '../lives.js'
 import { maybeShowInterstitial, showRewarded } from '../services/ads.js'
+import { onAppPause, useBack } from '../services/platform.js'
 import { save } from '../store.js'
 import NutCounter from './NutCounter.vue'
 import AcornIcon from './ui/AcornIcon.vue'
@@ -128,8 +129,24 @@ async function next() {
   else emit('play', props.levelIndex + 1)
 }
 
+// Bouton retour d'Android : ferme la fenêtre ouverte, sinon demande avant d'abandonner
+useBack(() => {
+  if (askHint.value) askHint.value = false
+  else if (askQuit.value) askQuit.value = false
+  else if (won.value) emit('exit', 'levels')
+  else if (state.status === 'playing') quit()
+  // chantier bloqué : il faut choisir dans la fenêtre
+  return true
+})
+
+// arrière-plan : la partie se fige (castors, minuteries, indice)
+const offPause = onAppPause((paused) => game?.setPaused(paused))
+
 onMounted(start)
-onBeforeUnmount(() => game?.destroy())
+onBeforeUnmount(() => {
+  offPause()
+  game?.destroy()
+})
 </script>
 
 <template>
@@ -224,7 +241,7 @@ onBeforeUnmount(() => game?.destroy())
       <div v-if="won" class="modal-backdrop">
         <section class="modal" role="dialog" aria-labelledby="win-title">
           <div class="modal-art"><BeaverMark :size="96" happy /></div>
-          <h2 id="win-title">Chef-d’œuvre !</h2>
+          <h2 id="win-title">Chef-d’œuvre&nbsp;!</h2>
           <p>« {{ level.name }} » est construit, bloc par bloc.</p>
           <p v-if="difficulty.reward > 1" class="diff-note">Niveau {{ difficulty.label }} : récompense × {{ difficulty.reward }}</p>
           <p class="reward pill"><AcornIcon :size="22" /> + {{ reward }}</p>
@@ -240,7 +257,7 @@ onBeforeUnmount(() => game?.destroy())
       <div v-if="askHint && state.status === 'playing'" class="modal-backdrop" @click.self="askHint = false">
         <section class="modal" role="dialog" aria-labelledby="hint-title">
           <div class="modal-art hint"><Icon name="bulb" :size="56" /></div>
-          <h2 id="hint-title">Besoin d’un indice ?</h2>
+          <h2 id="hint-title">Besoin d’un indice&nbsp;?</h2>
           <p>Les cases que tes castors peuvent construire s’illuminent pendant {{ HINT_MS / 1000 }} secondes.</p>
           <div class="stack">
             <button class="btn btn-primary" :disabled="save.nuts < HINT_PRICE" @click="payHint">
@@ -282,7 +299,7 @@ onBeforeUnmount(() => game?.destroy())
       <div v-if="askQuit" class="modal-backdrop" @click.self="askQuit = false">
         <section class="modal" role="dialog" aria-labelledby="quit-title">
           <div class="modal-art lives"><Icon name="heart" :size="56" /></div>
-          <h2 id="quit-title">Abandonner le niveau ?</h2>
+          <h2 id="quit-title">Abandonner le niveau&nbsp;?</h2>
           <p>Tu perdras une vie (il t’en reste {{ save.lives }}).</p>
           <div class="stack">
             <button class="btn btn-primary" @click="askQuit = false">Continuer à jouer</button>

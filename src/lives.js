@@ -66,10 +66,10 @@ export function withLife(action) {
   pendingPlay.value = action
 }
 
-// Appli fermée en pleine partie : c'est un abandon
-endAttempt(false)
-regen()
-if (typeof window !== 'undefined') {
+/** Au lancement, une fois la sauvegarde chargée. */
+export function initLives() {
+  endAttempt(false) // appli fermée en pleine partie : c'est un abandon
+  regen()
   setInterval(() => {
     now.value = Date.now()
     regen()

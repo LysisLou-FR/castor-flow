@@ -3,11 +3,18 @@ import { ref, watch } from 'vue'
 import { AD_LIVES, LIVES_PRICE, NUTS_LIVES, addLives, formatDelay, nextLifeIn, pendingPlay } from '../lives.js'
 import { coin } from '../game/sfx.js'
 import { showRewarded } from '../services/ads.js'
+import { useBack } from '../services/platform.js'
 import { save } from '../store.js'
 import AcornIcon from './ui/AcornIcon.vue'
 import Icon from './ui/Icon.vue'
 
 const adLoading = ref(false)
+
+useBack(() => {
+  if (!pendingPlay.value) return false
+  pendingPlay.value = null
+  return true
+}, 10)
 
 /** Des vies sont revenues (achat, pub ou compte à rebours) : lance ce que le joueur voulait faire. */
 function resume() {
@@ -41,7 +48,7 @@ function pay() {
     <div v-if="pendingPlay" class="modal-backdrop" @click.self="pendingPlay = null">
       <section class="modal" role="dialog" aria-labelledby="lives-title">
         <div class="modal-art lives"><Icon name="heart" :size="64" /></div>
-        <h2 id="lives-title">Plus de vies !</h2>
+        <h2 id="lives-title">Plus de vies&nbsp;!</h2>
         <p>
           Prochaine vie dans <strong>{{ formatDelay(nextLifeIn) }}</strong>.<br />
           Tu peux aussi en regagner tout de suite.
