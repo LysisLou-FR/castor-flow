@@ -10,6 +10,7 @@ Le concept de Colony Flow inversé : au lieu de fourmis qui mangent les cubes d'
 - Touche une équipe de castors pour l'envoyer au **chantier**. Ses castors partent construire les cases accessibles de leur couleur.
 - Si une équipe ne trouve rien à construire, elle occupe sa place. Quand toutes les places sont prises et que plus personne ne peut construire, le **chantier est bloqué**.
 - Pour continuer : regarder une **pub récompensée** ou payer **30 noisettes**, et tu gagnes une place de plus.
+- **Vies** (5 au maximum, une revient toutes les 20 minutes) : rater un niveau en coûte une, c'est-à-dire recommencer ou quitter après avoir envoyé au moins une équipe. Fermer l'appli en pleine partie compte aussi comme un échec. Gagner ne coûte rien. Sans vie, on ne peut plus lancer de niveau : il faut attendre, regarder une pub (+1 vie) ou payer 50 noisettes (+5 vies). Les réglages sont en haut de `src/lives.js`.
 - Les cases accessibles ne sont pas signalées : c'est au joueur de lire le dessin. Le bonus **Indice** (bouton ampoule, 15 noisettes ou une pub récompensée) les illumine pendant 6 secondes. Les prix et la durée sont en haut de `src/components/GameView.vue`.
 
 ## Développement (navigateur)

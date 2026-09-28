@@ -1236,3 +1236,50 @@ button {
   margin-top: 6px;
   text-align: center;
 }
+
+/* ---------- Vies ---------- */
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pill.lives .icon {
+  color: #ff5d62;
+}
+
+.pill.lives small {
+  margin-left: 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.modal-art.lives {
+  place-items: center;
+  padding-bottom: 0;
+  color: #ff5d62;
+  background: linear-gradient(180deg, #ffe4e6, #ffb8bd);
+}
+
+.lose-actions {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.lose-note {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.lose-note .icon {
+  color: #ff5d62;
+}

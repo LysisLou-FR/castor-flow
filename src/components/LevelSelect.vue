@@ -2,6 +2,7 @@
 import { DIFFICULTIES, LEVELS, PALETTE } from '../game/levels.js'
 import { hex } from '../game/art.js'
 import { save } from '../store.js'
+import LivesCounter from './LivesCounter.vue'
 import NutCounter from './NutCounter.vue'
 import Icon from './ui/Icon.vue'
 
@@ -23,7 +24,10 @@ const levels = LEVELS.map((level, index) => ({
     <header class="topbar">
       <button class="icon-btn glass" aria-label="Retour au menu" @click="emit('back')"><Icon name="back" /></button>
       <h1 class="page-title">Niveaux</h1>
-      <NutCounter class="glass" />
+      <div class="topbar-right">
+        <LivesCounter class="glass" />
+        <NutCounter class="glass" />
+      </div>
     </header>
 
     <div class="level-grid">

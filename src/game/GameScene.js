@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { Board, EMPTY } from './logic.js'
 import { paintIsland } from './island.js'
-import { pop } from './sfx.js'
+import * as sfx from './sfx.js'
 import {
   BEAVER_RES,
   BEAVER_RIG,
@@ -64,7 +64,6 @@ export class GameScene extends Phaser.Scene {
     this.h = this.parsed.h
     this.GY = this.w + 2
     this.beavers = []
-    this.inFlight = 0
     this.cubes = []
     this.hintLeft = 0 // durée restante du bonus « Indice », en ms
 
@@ -252,6 +251,7 @@ export class GameScene extends Phaser.Scene {
   showHint(ms) {
     this.hintLeft = ms
     this.state.hint = true
+    sfx.sparkle()
   }
 
   updateHint(time, delta) {
@@ -308,13 +308,17 @@ export class GameScene extends Phaser.Scene {
     this.checkStuck()
   }
 
-  /** Bloqué : toutes les places sont prises et aucune équipe ne peut construire. */
+  /**
+   * Bloqué : toutes les places sont prises et aucune équipe ne peut construire.
+   * Annoncé seulement quand le dernier castor a replongé (dispatch() revérifie en boucle).
+   */
   checkStuck() {
     const { state } = this
-    if (state.status !== 'playing' || this.inFlight > 0) return
+    if (state.status !== 'playing' || this.beavers.some((b) => !b.done)) return
     if (state.slots.some((crew) => !crew)) return
     if (state.slots.some((crew) => this.board.findTarget(crew.color) !== -1)) return
     state.status = 'stuck'
+    sfx.stuck()
     this.bridge.onLose?.()
   }
 
@@ -365,7 +369,6 @@ export class GameScene extends Phaser.Scene {
         { to: [BANK + 0.55, lane, -0.45], dur: 0.32, arc: 0.3, anim: 'hop', alpha: 0, onEnd: () => this.splash(BANK + 0.45, lane) },
       ],
     }
-    this.inFlight++
     this.beavers.push(b)
     this.updateLook(b)
     this.renderBeaver(b)
@@ -473,7 +476,6 @@ export class GameScene extends Phaser.Scene {
 
   /** Le castor lâche son cube : il se pose dans le mur avec un petit rebond et de la poussière. */
   placeCube(b) {
-    this.inFlight--
     b.carrying = false
     b.happy = true // il repartira tout content, de face
     this.updateLook(b)
@@ -498,7 +500,7 @@ export class GameScene extends Phaser.Scene {
       ease: 'Back.easeOut',
       onComplete: () => {
         ghost.setVisible(false)
-        pop(z / Math.max(1, this.parsed.h - 1))
+        sfx.pop(z / Math.max(1, this.parsed.h - 1))
       },
     })
     this.wallItems.push({ img, gy0, z })
@@ -563,6 +565,7 @@ export class GameScene extends Phaser.Scene {
 
   win() {
     this.state.status = 'won'
+    sfx.win()
     const cubes = this.cubes
     cubes.forEach((img, n) => {
       this.tweens.add({

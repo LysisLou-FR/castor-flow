@@ -1,9 +1,11 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { DIFFICULTIES, LEVELS } from '../game/levels.js'
 import { parseLevel } from '../game/logic.js'
 import { hex } from '../game/art.js'
 import { createGame } from '../game/createGame.js'
+import * as sfx from '../game/sfx.js'
+import { endAttempt, startAttempt, withLife } from '../lives.js'
 import { maybeShowInterstitial, showRewarded } from '../services/ads.js'
 import { save } from '../store.js'
 import NutCounter from './NutCounter.vue'
@@ -32,7 +34,14 @@ const adLoading = ref(false)
 const toast = ref('')
 const shaking = ref(-1)
 const askHint = ref(false)
+const askQuit = ref(false)
 let game = null
+
+// dernier bloc posé : le niveau est réussi, même si le joueur quitte pendant la célébration
+watch(
+  () => state.status,
+  (status) => status === 'won' && endAttempt(true),
+)
 let toastTimer = 0
 
 const color = (crew) => parsed.colors[crew.color]
@@ -45,8 +54,12 @@ function start() {
 }
 
 function send(l) {
-  if (game.sendLane(l)) return
+  if (game.sendLane(l)) {
+    startAttempt() // la partie compte : la rater coûtera une vie
+    return sfx.send()
+  }
   if (state.status !== 'playing') return
+  sfx.refuse()
   shaking.value = l
   setTimeout(() => (shaking.value = -1), 400)
   showToast('Chantier plein ! Attends qu’une place se libère.')
@@ -64,6 +77,7 @@ function onWin() {
   save.wins++
   save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, props.levelIndex + 2))
   won.value = true
+  sfx.coin()
 }
 
 /** Pub récompensée : `reward` n'est appelé que si la vidéo a été regardée jusqu'au bout. */
@@ -91,6 +105,23 @@ function payWithNuts() {
   game.addSlot()
 }
 
+/** Rejouer, ou recommencer après un blocage (le niveau est alors raté : une vie de moins). */
+function retry() {
+  endAttempt(false)
+  withLife(start)
+}
+
+/** Quitter en pleine partie, c'est rater le niveau : on demande confirmation. */
+function quit() {
+  if (save.attempt && !won.value && state.status === 'playing') askQuit.value = true
+  else giveUp()
+}
+
+function giveUp() {
+  endAttempt(false)
+  emit('exit', 'levels')
+}
+
 async function next() {
   await maybeShowInterstitial()
   if (isLast) emit('exit', 'levels')
@@ -108,7 +139,7 @@ onBeforeUnmount(() => game?.destroy())
       <div ref="stage" class="stage"></div>
 
       <header class="hud">
-        <button class="icon-btn glass" aria-label="Retour aux niveaux" @click="emit('exit', 'levels')">
+        <button class="icon-btn glass" aria-label="Retour aux niveaux" @click="quit">
           <Icon name="back" />
         </button>
         <div class="hud-level glass">
@@ -199,7 +230,7 @@ onBeforeUnmount(() => game?.destroy())
           <p class="reward pill"><AcornIcon :size="22" /> + {{ reward }}</p>
           <div class="stack">
             <button class="btn btn-primary" @click="next">{{ isLast ? 'Voir les niveaux' : 'Niveau suivant' }}</button>
-            <button class="btn btn-soft" @click="start"><Icon name="restart" :size="18" /> Rejouer</button>
+            <button class="btn btn-soft" @click="retry"><Icon name="restart" :size="18" /> Rejouer</button>
           </div>
         </section>
       </div>
@@ -237,7 +268,25 @@ onBeforeUnmount(() => game?.destroy())
             <button class="btn btn-soft" :disabled="save.nuts < SLOT_PRICE" @click="payWithNuts">
               <AcornIcon :size="20" /> {{ SLOT_PRICE }} · +1 place
             </button>
-            <button class="btn btn-link" @click="start">Recommencer le niveau</button>
+            <div class="lose-actions">
+              <button class="btn btn-link" @click="retry">Recommencer</button>
+              <button class="btn btn-link" @click="giveUp">Quitter</button>
+            </div>
+            <p class="lose-note"><Icon name="heart" :size="15" /> Recommencer ou quitter coûte 1 vie (tu en as {{ save.lives }})</p>
+          </div>
+        </section>
+      </div>
+    </Transition>
+
+    <Transition name="fade">
+      <div v-if="askQuit" class="modal-backdrop" @click.self="askQuit = false">
+        <section class="modal" role="dialog" aria-labelledby="quit-title">
+          <div class="modal-art lives"><Icon name="heart" :size="56" /></div>
+          <h2 id="quit-title">Abandonner le niveau ?</h2>
+          <p>Tu perdras une vie (il t’en reste {{ save.lives }}).</p>
+          <div class="stack">
+            <button class="btn btn-primary" @click="askQuit = false">Continuer à jouer</button>
+            <button class="btn btn-soft" @click="giveUp">Abandonner · −1 vie</button>
           </div>
         </section>
       </div>

@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { PALETTE } from '../game/levels.js'
 import { PRODUCTS, buy, isDemo, loadPrices, restore } from '../services/purchases.js'
+import { coin } from '../game/sfx.js'
 import { save } from '../store.js'
 import NutCounter from './NutCounter.vue'
 import AcornIcon from './ui/AcornIcon.vue'
@@ -26,7 +27,10 @@ async function purchase(product) {
   busy.value = product.id
   message.value = ''
   try {
-    if (await buy(product)) message.value = `Merci ! « ${product.title} » est activé.`
+    if (await buy(product)) {
+      message.value = `Merci ! « ${product.title} » est activé.`
+      coin()
+    }
   } catch (err) {
     message.value = "L'achat n'a pas pu aboutir."
     console.warn(err)

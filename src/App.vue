@@ -4,13 +4,18 @@ import MainMenu from './components/MainMenu.vue'
 import LevelSelect from './components/LevelSelect.vue'
 import GameView from './components/GameView.vue'
 import ShopView from './components/ShopView.vue'
+import NoLivesModal from './components/NoLivesModal.vue'
+import { withLife } from './lives.js'
 
 const screen = ref('menu') // menu | levels | game | shop
 const levelIndex = ref(0)
 
+/** Lance un niveau s'il reste une vie (sinon la fenêtre « Plus de vies » s'ouvre). */
 function play(index) {
-  levelIndex.value = index
-  screen.value = 'game'
+  withLife(() => {
+    levelIndex.value = index
+    screen.value = 'game'
+  })
 }
 
 // En dev, le bouton « Tester » du map builder ouvre /?play=N pour lancer directement le niveau N
@@ -26,4 +31,5 @@ if (import.meta.env.DEV) {
   <!-- :key force un nouveau jeu Phaser à chaque niveau -->
   <GameView v-else-if="screen === 'game'" :key="levelIndex" :level-index="levelIndex" @play="play" @exit="screen = $event" />
   <ShopView v-else-if="screen === 'shop'" @back="screen = 'menu'" />
+  <NoLivesModal />
 </template>

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { LEVELS } from '../game/levels.js'
 import { save } from '../store.js'
+import LivesCounter from './LivesCounter.vue'
 import NutCounter from './NutCounter.vue'
 import SettingsModal from './SettingsModal.vue'
 import BeaverHead from './ui/BeaverHead.vue'
@@ -19,7 +20,10 @@ const settings = ref(false)
     <CubeBackdrop class="menu-backdrop" />
     <header class="topbar">
       <button class="icon-btn glass" aria-label="Paramètres" @click="settings = true"><Icon name="gear" /></button>
-      <NutCounter class="glass" />
+      <div class="topbar-right">
+        <LivesCounter class="glass" />
+        <NutCounter class="glass" />
+      </div>
     </header>
 
     <section class="hero">
