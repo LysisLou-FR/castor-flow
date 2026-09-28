@@ -5,6 +5,8 @@ import { pop } from '../game/sfx.js'
 import { privacyOptionsRequired, showPrivacyOptions } from '../services/ads.js'
 import { useBack } from '../services/platform.js'
 import { isDemo, restore } from '../services/purchases.js'
+import { LEVELS } from '../game/levels.js'
+import { STAT_KEYS, statsText } from '../stats.js'
 import { save } from '../store.js'
 import Icon from './ui/Icon.vue'
 
@@ -12,9 +14,21 @@ const emit = defineEmits(['close'])
 const message = ref('')
 const busy = ref(false)
 const confirmReset = ref(false)
+const showStats = ref(false) // tableau des statistiques de test
+const played = () => LEVELS.map((l, i) => ({ n: i + 1, name: l.name, s: save.stats[l.name] })).filter((r) => r.s)
+
+async function copyStats() {
+  try {
+    await navigator.clipboard.writeText(statsText(LEVELS))
+    message.value = 'Statistiques copiées : colle-les dans un message.'
+  } catch {
+    message.value = 'Copie impossible sur cet appareil.'
+  }
+}
 
 useBack(() => {
-  emit('close')
+  if (showStats.value) showStats.value = false
+  else emit('close')
   return true
 }, 10)
 
@@ -68,6 +82,25 @@ function resetProgress() {
         <Icon name="shield" />
         <span>Confidentialité et publicités</span>
       </button>
+
+      <button class="setting-row" @click="showStats = !showStats">
+        <Icon name="grid" />
+        <span>Statistiques de jeu</span>
+      </button>
+      <div v-if="showStats" class="stats">
+        <table v-if="played().length">
+          <thead>
+            <tr><th>Niveau</th><th v-for="(label, k) in STAT_KEYS" :key="k">{{ label }}</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in played()" :key="row.n">
+              <td>{{ row.n }}. {{ row.name }}</td><td v-for="(label, k) in STAT_KEYS" :key="k">{{ row.s[k] }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else class="muted">Aucune partie jouée pour l’instant.</p>
+        <button v-if="played().length" class="btn btn-soft btn-small" @click="copyStats">Copier</button>
+      </div>
 
       <button v-if="!confirmReset" class="setting-row danger" @click="confirmReset = true">
         <Icon name="trash" />

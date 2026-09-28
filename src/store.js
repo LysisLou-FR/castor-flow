@@ -7,7 +7,7 @@ import { reactive, watch } from 'vue'
 // localStorage sert de copie de secours et de stockage dans le navigateur.
 const KEY = 'cubiver-save-v1'
 const OLD_KEY = 'castor-flow-save-v1' // nom du prototype : sa sauvegarde est reprise automatiquement
-const defaults = { unlocked: 1, nuts: 0, noAds: false, wins: 0, sound: true, lives: 5, livesAt: null, attempt: false }
+const defaults = { unlocked: 1, nuts: 0, noAds: false, wins: 0, sound: true, lives: 5, livesAt: null, attempt: false, freeHints: 1, stats: {} }
 const isNative = Capacitor.isNativePlatform()
 
 function parse(json) {

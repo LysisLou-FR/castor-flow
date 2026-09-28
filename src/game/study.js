@@ -172,11 +172,11 @@ export function studyLevel(level, { runs = 2000 } = {}) {
   return report
 }
 
-/** Difficulté ressentie, d'après le taux de victoire du joueur moyen (sans acheter de place). */
-export function feltDifficulty(casualWinRate) {
-  if (casualWinRate >= 0.9) return 'normal'
-  if (casualWinRate >= 0.4) return 'hard'
-  return 'superhard'
+/** Part des parties gagnées sans acheter de place par un type de joueur. */
+export function winRate(level, player = PLAYERS.casual, runs = 300) {
+  let wins = 0
+  for (let r = 0; r < runs; r++) if (simulate(level, player, { seed: r + 1 }).extra === 0) wins++
+  return wins / runs
 }
 
 /** Résumé rapide pour l'éditeur (recalculé à chaque modification du niveau). */
@@ -185,18 +185,58 @@ export function analyzeLevel(level, { runs = 300 } = {}) {
   const blocks = parsed.cells.filter((c) => c !== EMPTY).length
   const base = { blocks, colors: parsed.colors.length, crews: generateCrews(parsed, level).flat().length }
   if (!blocks) return { ...base, solvable: false, minSlots: null }
-  const winRate = (player) => {
-    let wins = 0
-    for (let r = 0; r < runs; r++) if (simulate(level, player, { seed: r + 1 }).extra === 0) wins++
-    return wins / runs
-  }
-  const casualWin = winRate(PLAYERS.casual)
   return {
     ...base,
     solvable: solve(level).solvable, // null : recherche trop longue
     minSlots: optimalSlots(level).slots,
-    casualWin,
-    randomWin: winRate(PLAYERS.random),
-    felt: feltDifficulty(casualWin),
+    casualWin: winRate(level, PLAYERS.casual, runs),
+    randomWin: winRate(level, PLAYERS.random, runs),
   }
+}
+
+// ---------- Réglage automatique ----------
+
+const LIMITS = { slots: [3, 6], crewSize: [3, 8], queues: [2, 5] }
+const clampTo = (key, v) => Math.min(LIMITS[key][1], Math.max(LIMITS[key][0], v))
+
+/** Réglages un cran plus durs (dir = 1) ou plus faciles (dir = -1) : places, puis taille des équipes, puis files. */
+function nudge(cfg, dir, step) {
+  const order = ['slots', 'crewSize', 'queues']
+  for (let k = 0; k < order.length; k++) {
+    const key = order[(step + k) % order.length]
+    const delta = key === 'queues' ? dir : -dir // plus de files = plus dur ; moins de places ou d'équipiers = plus dur
+    const next = clampTo(key, cfg[key] + delta)
+    if (next !== cfg[key]) return { ...cfg, [key]: next }
+  }
+  return null
+}
+
+/**
+ * Cherche la graine (et si besoin les réglages) qui rapprochent le taux de victoire du joueur moyen
+ * de `target` (0 à 1), en gardant le niveau faisable par un joueur parfait.
+ * Renvoie { crewSize, queues, slots, seed, win, error }.
+ */
+export function tuneLevel(level, { target = level.target, seeds = 24, runs = 160, tolerance = 0.03, maxSteps = 8 } = {}) {
+  let cfg = { crewSize: level.crewSize, queues: level.queues, slots: level.slots }
+  let best = null
+  for (let step = 0; step <= maxSteps; step++) {
+    let stepBest = null
+    for (let seed = 1; seed <= seeds; seed++) {
+      const candidate = { ...level, ...cfg, seed }
+      const win = winRate(candidate, PLAYERS.casual, runs)
+      const error = Math.abs(win - target)
+      if (stepBest && error >= stepBest.error) continue
+      if (solve(candidate).solvable !== true) continue
+      stepBest = { ...cfg, seed, win, error }
+      if (error <= tolerance) break
+    }
+    if (stepBest && (!best || stepBest.error < best.error)) best = stepBest
+    if (best && best.error <= tolerance) break
+    // trop facile : on durcit les réglages ; trop dur : on les adoucit
+    const tooEasy = stepBest ? stepBest.win > target : false
+    const next = nudge(cfg, tooEasy ? 1 : -1, step)
+    if (!next) break
+    cfg = next
+  }
+  return best
 }

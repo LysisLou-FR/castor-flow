@@ -2,10 +2,26 @@
 //   npm run study               → tous les niveaux
 //   npm run study -- 7          → le niveau 7 seulement
 //   npm run study -- 7 --seeds 40 → en plus, compare 40 graines pour ce niveau (la graine change l'ordre des équipes)
+//   npm run study -- --curve     → la courbe de difficulté de tout le parcours
 import { LEVELS } from '../src/game/levels.js'
-import { studyLevel } from '../src/game/study.js'
+import { PLAYERS, studyLevel, winRate } from '../src/game/study.js'
 
 const args = process.argv.slice(2)
+
+// Vue d'ensemble : la courbe de difficulté du parcours (joueur moyen), cible et résultat pour chaque niveau
+if (args.includes('--curve')) {
+  const BADGE = { normal: ' ', hard: 'H', superhard: 'S' }
+  console.log('\n  N°  niveau               cible  obtenu   joueur moyen (█ obtenu, | cible)')
+  for (const [n, level] of LEVELS.entries()) {
+    const win = winRate(level, PLAYERS.casual, 1000)
+    const bar = Array.from({ length: 40 }, (_, k) => (k === Math.round((level.target ?? -1) * 40) ? '|' : k < Math.round(win * 40) ? '█' : '·')).join('')
+    const target = level.target === undefined ? '   -' : `${Math.round(level.target * 100)} %`.padStart(5)
+    const gap = level.target !== undefined && Math.abs(win - level.target) > 0.08 ? '  ⚠' : ''
+    console.log(`  ${String(n + 1).padStart(2)} ${BADGE[level.difficulty]} ${level.name.padEnd(18)} ${target}  ${`${Math.round(win * 100)} %`.padStart(5)}   ${bar}${gap}`)
+  }
+  console.log('\n  H = hard, S = super hard ; ⚠ = plus de 8 points d\'écart avec la cible (npm run tune pour réajuster)\n')
+  process.exit(0)
+}
 const seedsArg = args.indexOf('--seeds')
 const seeds = seedsArg !== -1 ? Number(args[seedsArg + 1]) : 0
 const only = args.find((a, i) => /^\d+$/.test(a) && (seedsArg === -1 || i !== seedsArg + 1))

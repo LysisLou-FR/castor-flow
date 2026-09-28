@@ -11,7 +11,8 @@
     "android": "vite build && cap sync android && cap open android",
     "icons": "node scripts/build-icons.mjs && capacitor-assets generate --android --iconBackgroundColor \"#d9853f\" --iconBackgroundColorDark \"#d9853f\" && node scripts/build-icons.mjs --fix-android",
     "builder": "vite --open /builder.html",
-    "study": "node scripts/study-levels.mjs"
+    "study": "node scripts/study-levels.mjs",
+    "tune": "node scripts/tune-levels.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",

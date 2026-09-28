@@ -5,18 +5,22 @@ import LevelSelect from './components/LevelSelect.vue'
 import GameView from './components/GameView.vue'
 import ShopView from './components/ShopView.vue'
 import NoLivesModal from './components/NoLivesModal.vue'
+import ReplayModal from './components/ReplayModal.vue'
 import { withLife } from './lives.js'
+import { withReplayAd } from './replay.js'
 import { useBack } from './services/platform.js'
 
 const screen = ref('menu') // menu | levels | game | shop
 const levelIndex = ref(0)
 
-/** Lance un niveau s'il reste une vie (sinon la fenêtre « Plus de vies » s'ouvre). */
+function open(index) {
+  levelIndex.value = index
+  screen.value = 'game'
+}
+
+/** Lance un niveau s'il reste une vie (sinon « Plus de vies »), après une pub si le niveau est déjà réussi. */
 function play(index) {
-  withLife(() => {
-    levelIndex.value = index
-    screen.value = 'game'
-  })
+  withLife(() => withReplayAd(index, () => open(index)))
 }
 
 // Bouton retour d'Android : niveaux et boutique reviennent au menu (la partie gère le sien)
@@ -29,7 +33,7 @@ useBack(() => {
 // En dev, le bouton « Tester » du map builder ouvre /?play=N pour lancer directement le niveau N
 if (import.meta.env.DEV) {
   const n = Number(new URLSearchParams(location.search).get('play'))
-  if (Number.isInteger(n) && n >= 0 && new URLSearchParams(location.search).has('play')) play(n)
+  if (Number.isInteger(n) && n >= 0 && new URLSearchParams(location.search).has('play')) open(n)
 }
 </script>
 
@@ -40,4 +44,5 @@ if (import.meta.env.DEV) {
   <GameView v-else-if="screen === 'game'" :key="levelIndex" :level-index="levelIndex" @play="play" @exit="screen = $event" />
   <ShopView v-else-if="screen === 'shop'" @back="screen = 'menu'" />
   <NoLivesModal />
+  <ReplayModal />
 </template>

@@ -5,7 +5,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { hex } from '../game/art.js'
 import { DIFFICULTIES, PALETTE } from '../game/levels.js'
 import { generateCrews, parseLevel } from '../game/logic.js'
-import { analyzeLevel } from '../game/study.js'
+import { analyzeLevel, tuneLevel } from '../game/study.js'
 import { EMPTY_CELL, emptyArt, floodFill, resizeArt, setCell, shiftArt } from './grid.js'
 import { imageToArt, loadImage } from './image.js'
 
@@ -66,12 +66,37 @@ function flash(text) {
 }
 
 async function save() {
-  const clean = levels.value.map(({ name, difficulty, seed, crewSize, queues, slots, art }) => ({ name, difficulty, seed, crewSize, queues, slots, art }))
+  // champs connus, dans un ordre stable (cible et tutoriel seulement s'ils existent)
+  const clean = levels.value.map(({ name, difficulty, target, seed, crewSize, queues, slots, tutorial, art }) => ({
+    name,
+    difficulty,
+    ...(target !== undefined && { target }),
+    seed,
+    crewSize,
+    queues,
+    slots,
+    ...(tutorial && { tutorial }),
+    art,
+  }))
   const res = await fetch('/__levels', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(clean) })
   const out = await res.json()
   if (!res.ok) return flash(`Erreur : ${out.error}`)
   dirty.value = false
   flash(`Enregistré dans levels.json (${out.count} niveaux)`)
+}
+
+const tuning = ref(false)
+
+/** Cherche la graine (et si besoin les réglages) qui rapprochent le joueur moyen de la cible. */
+async function autoTune() {
+  tuning.value = true
+  await new Promise((r) => setTimeout(r, 30)) // laisse l'affichage se mettre à jour avant le calcul
+  const best = tuneLevel(JSON.parse(JSON.stringify(level.value)))
+  tuning.value = false
+  if (!best) return flash('Aucun réglage faisable trouvé')
+  const { win, error, ...settings } = best
+  update(settings)
+  flash(`Joueur moyen : ${Math.round(win * 100)} % (cible ${Math.round(level.value.target * 100)} %)`)
 }
 
 async function test() {
@@ -398,6 +423,15 @@ const thumb = (art) => art.join('').split('').map((ch) => (ch === EMPTY_CELL ? n
         <button class="link" @click="applyDefaults">Réglages par défaut de la difficulté</button>
       </div>
 
+      <div class="field params">
+        <span>Objectif de difficulté</span>
+        <label>
+          Joueur moyen gagne (%)
+          <input type="number" min="0" max="100" :value="level.target === undefined ? '' : Math.round(level.target * 100)" @change="update({ target: $event.target.value === '' ? undefined : Number($event.target.value) / 100 })" />
+        </label>
+        <button class="link" :disabled="level.target === undefined || tuning" @click="autoTune">{{ tuning ? 'Recherche…' : 'Trouver les réglages pour atteindre la cible' }}</button>
+      </div>
+
       <div class="analysis" :class="analysis.solvable ? 'ok' : 'ko'">
         <strong>{{ analysis.solvable ? '✓ Faisable' : '✗ Infaisable' }}</strong>
         <span v-if="!analysis.blocks">Le dessin est vide.</span>
@@ -411,8 +445,10 @@ const thumb = (art) => art.join('').split('').map((ch) => (ch === EMPTY_CELL ? n
           <template v-if="analysis.blocks">
             <dt>Joueur moyen gagne</dt><dd>{{ Math.round(analysis.casualWin * 100) }} %</dd>
             <dt>Au hasard, gagne</dt><dd>{{ Math.round(analysis.randomWin * 100) }} %</dd>
-            <dt>Difficulté ressentie</dt>
-            <dd :class="{ mismatch: analysis.felt !== level.difficulty }">{{ DIFFICULTIES[analysis.felt].label }}</dd>
+            <template v-if="level.target !== undefined">
+              <dt>Cible</dt>
+              <dd :class="{ mismatch: Math.abs(analysis.casualWin - level.target) > 0.08 }">{{ Math.round(level.target * 100) }} %</dd>
+            </template>
           </template>
         </dl>
         <small class="muted">

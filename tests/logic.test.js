@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { DIFFICULTIES, LEVELS, PALETTE } from '../src/game/levels.js'
 import { Board, CELL, generateCrews, parseLevel } from '../src/game/logic.js'
-import { solve } from '../src/game/study.js'
+import { PLAYERS, solve, winRate } from '../src/game/study.js'
 
 test('les colonnes se construisent de bas en haut', () => {
   const board = new Board(parseLevel({ name: 't', art: ['R.', 'RB'] }))
@@ -35,5 +35,16 @@ for (const [n, level] of LEVELS.entries()) {
     assert.equal(beavers, blocks, 'un castor par bloc')
     assert.ok(lanes.flat().every((c) => c.count <= level.crewSize))
     assert.equal(solve(level).solvable, true, 'un joueur parfait doit pouvoir finir le niveau sans acheter de place')
+    if (level.target !== undefined) {
+      const win = winRate(level, PLAYERS.casual, 300)
+      assert.ok(
+        Math.abs(win - level.target) <= 0.12,
+        `joueur moyen à ${Math.round(win * 100)} % pour une cible de ${Math.round(level.target * 100)} % : relance npm run tune`,
+      )
+    }
+    if (level.target !== undefined) {
+      const win = winRate(level, PLAYERS.casual, 300)
+      assert.ok(Math.abs(win - level.target) <= 0.12, )
+    }
   })
 }

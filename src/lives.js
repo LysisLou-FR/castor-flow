@@ -7,7 +7,7 @@ export const MAX_LIVES = 5
 export const REGEN_MS = 20 * 60 * 1000 // une vie revient toutes les 20 minutes, jusqu'à MAX_LIVES
 export const AD_LIVES = 1 // vies gagnées avec une pub récompensée
 export const NUTS_LIVES = 5 // vies achetées avec des noisettes
-export const LIVES_PRICE = 50 // prix en noisettes de NUTS_LIVES vies
+export const LIVES_PRICE = 120 // prix en noisettes de NUTS_LIVES vies
 
 const now = ref(Date.now())
 

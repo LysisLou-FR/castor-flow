@@ -7,6 +7,8 @@ import { createGame } from '../game/createGame.js'
 import * as sfx from '../game/sfx.js'
 import { endAttempt, startAttempt, withLife } from '../lives.js'
 import { maybeShowInterstitial, showRewarded } from '../services/ads.js'
+import { withReplayAd } from '../replay.js'
+import { track } from '../stats.js'
 import { onAppPause, useBack } from '../services/platform.js'
 import { save } from '../store.js'
 import NutCounter from './NutCounter.vue'
@@ -18,8 +20,8 @@ import IsoCube from './ui/IsoCube.vue'
 const props = defineProps({ levelIndex: { type: Number, required: true } })
 const emit = defineEmits(['play', 'exit'])
 
-const SLOT_PRICE = 30 // prix en noisettes d'une place de chantier supplémentaire
-const HINT_PRICE = 15 // prix en noisettes du bonus « Indice »
+const SLOT_PRICE = 90 // prix en noisettes d'une place de chantier supplémentaire
+const HINT_PRICE = 40 // prix en noisettes du bonus « Indice »
 const HINT_MS = 6000 // durée de l'indice
 const DECK_VISIBLE = 3
 const level = LEVELS[props.levelIndex]
@@ -30,6 +32,7 @@ const difficulty = DIFFICULTIES[level.difficulty] ?? DIFFICULTIES.normal
 const stage = ref(null)
 const state = reactive({ lanes: [], slots: [], progress: 0, status: 'playing' })
 const reward = ref(0)
+const replayed = ref(false) // niveau déjà réussi auparavant : pas de récompense
 const won = ref(false) // affiché après la célébration, pas dès le dernier bloc
 const adLoading = ref(false)
 const toast = ref('')
@@ -48,15 +51,61 @@ let toastTimer = 0
 const color = (crew) => parsed.colors[crew.color]
 const percent = computed(() => Math.round(state.progress * 100))
 
+// ---------- Tutoriel des premiers niveaux (champ `tutorial` du niveau) ----------
+const TUTORIAL = {
+  send: { text: 'Touche une équipe de castors pour l’envoyer construire le dessin.', at: 'bottom', hand: 'lane' },
+  column: {
+    text: 'Un bloc ne peut reposer que sur un autre bloc ou sur une fondation (le sol ou un échafaudage) : les castors construisent chaque colonne de bas en haut.',
+    at: 'top',
+    ok: true,
+  },
+  slots: {
+    text: 'Le chantier n’a que 3 places. Si elles sont toutes prises par des équipes qui attendent, il est bloqué !',
+    at: 'top',
+    ok: true,
+  },
+  hint: {
+    text: 'Tu ne sais plus quoi envoyer ? L’ampoule illumine les cases accessibles. La première est offerte !',
+    at: 'top',
+    ok: true,
+    hand: 'hint',
+  },
+}
+const coach = ref(null) // bulle d'aide affichée : { text, at: 'top' | 'bottom', ok, hand }
+let coachTimer = 0
+let waitExplained = false
+
+function showCoach(tip, ms = 0) {
+  clearTimeout(coachTimer)
+  coach.value = tip
+  if (ms) coachTimer = setTimeout(() => (coach.value = null), ms)
+}
+
+// niveau 2 : la première fois qu'une équipe attend, on explique pourquoi
+watch(
+  () => state.slots.some((crew) => crew?.waiting),
+  (waiting) => {
+    if (!waiting || level.tutorial !== 'column' || waitExplained) return
+    waitExplained = true
+    showCoach({ text: 'Cette équipe attend : aucune case de sa couleur n’est accessible. Elle repartira dès qu’une case se libère.', at: 'top' }, 5000)
+  },
+)
+
 function start() {
   game?.destroy()
   won.value = false
+  waitExplained = false
+  showCoach(TUTORIAL[level.tutorial] ?? null)
   game = createGame(stage.value, { level, levelIndex: props.levelIndex, parsed, state, onWin, onLose() {} })
 }
 
 function send(l) {
   if (game.sendLane(l)) {
+    if (!save.attempt) track(level.name, 'plays')
     startAttempt() // la partie compte : la rater coûtera une vie
+    if (coach.value?.hand === 'lane') {
+      showCoach({ text: 'Bravo ! Chaque castor pose un cube de sa couleur. Envoie les équipes jusqu’à finir le dessin.', at: 'top' }, 4500)
+    }
     return sfx.send()
   }
   if (state.status !== 'playing') return
@@ -73,12 +122,16 @@ function showToast(message) {
 }
 
 function onWin() {
-  reward.value = (10 + props.levelIndex * 5) * difficulty.reward // hard × 2, super hard × 3
+  // hard × 2, super hard × 3 ; rejouer un niveau déjà réussi ne rapporte rien
+  const firstWin = !save.stats[level.name]?.wins
+  replayed.value = !firstWin
+  reward.value = firstWin ? (20 + props.levelIndex * 2) * difficulty.reward : 0
   save.nuts += reward.value
   save.wins++
   save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, props.levelIndex + 2))
+  track(level.name, 'wins')
   won.value = true
-  sfx.coin()
+  if (reward.value) sfx.coin()
 }
 
 /** Pub récompensée : `reward` n'est appelé que si la vidéo a été regardée jusqu'au bout. */
@@ -91,25 +144,36 @@ async function watchAd(reward) {
 
 function hint() {
   askHint.value = false
+  if (coach.value?.hand === 'hint') showCoach(null)
+  track(level.name, 'hints')
   game.showHint(HINT_MS)
 }
 
 function payHint() {
-  if (save.nuts < HINT_PRICE) return
-  save.nuts -= HINT_PRICE
+  if (save.freeHints > 0) save.freeHints-- // le premier indice est offert
+  else if (save.nuts >= HINT_PRICE) save.nuts -= HINT_PRICE
+  else return
   hint()
+}
+
+function addSlot() {
+  track(level.name, 'slots')
+  game.addSlot()
 }
 
 function payWithNuts() {
   if (save.nuts < SLOT_PRICE) return
   save.nuts -= SLOT_PRICE
-  game.addSlot()
+  addSlot()
 }
 
-/** Rejouer, ou recommencer après un blocage (le niveau est alors raté : une vie de moins). */
+/**
+ * Rejouer, ou recommencer après un blocage (le niveau est alors raté : une vie de moins).
+ * Un niveau déjà réussi ne se rejoue qu'après une pub.
+ */
 function retry() {
-  endAttempt(false)
-  withLife(start)
+  if (endAttempt(false)) track(level.name, 'fails')
+  withLife(() => withReplayAd(props.levelIndex, start))
 }
 
 /** Quitter en pleine partie, c'est rater le niveau : on demande confirmation. */
@@ -119,7 +183,7 @@ function quit() {
 }
 
 function giveUp() {
-  endAttempt(false)
+  if (endAttempt(false)) track(level.name, 'fails')
   emit('exit', 'levels')
 }
 
@@ -182,8 +246,17 @@ onBeforeUnmount(() => {
         @click="askHint = true"
       >
         <Icon name="bulb" :size="24" />
-        <span class="hint-price"><AcornIcon :size="13" />{{ HINT_PRICE }}</span>
+        <span v-if="save.freeHints > 0" class="hint-price">offert</span>
+        <span v-else class="hint-price"><AcornIcon :size="13" />{{ HINT_PRICE }}</span>
       </button>
+      <span v-if="coach?.hand === 'hint' && state.status === 'playing'" class="coach-hand hint-hand" aria-hidden="true">👉</span>
+
+      <Transition name="fade">
+        <div v-if="coach && state.status === 'playing'" class="coach glass" :class="coach.at" role="status">
+          <p>{{ coach.text }}</p>
+          <button v-if="coach.ok" class="btn btn-primary btn-small" @click="showCoach(null)">Compris</button>
+        </div>
+      </Transition>
 
       <Transition name="toast">
         <p v-if="toast" class="toast" role="status">{{ toast }}</p>
@@ -233,6 +306,7 @@ onBeforeUnmount(() => {
           </TransitionGroup>
           <span v-if="lane.length > DECK_VISIBLE" class="deck-more">+{{ lane.length - DECK_VISIBLE }}</span>
           <span v-if="!lane.length" class="deck-empty"><Icon name="check" :size="18" /></span>
+          <span v-if="l === 0 && coach?.hand === 'lane' && lane.length" class="coach-hand" aria-hidden="true">👆</span>
         </div>
       </div>
     </section>
@@ -243,8 +317,9 @@ onBeforeUnmount(() => {
           <div class="modal-art"><BeaverMark :size="96" happy /></div>
           <h2 id="win-title">Chef-d’œuvre&nbsp;!</h2>
           <p>« {{ level.name }} » est construit, bloc par bloc.</p>
-          <p v-if="difficulty.reward > 1" class="diff-note">Niveau {{ difficulty.label }} : récompense × {{ difficulty.reward }}</p>
-          <p class="reward pill"><AcornIcon :size="22" /> + {{ reward }}</p>
+          <p v-if="replayed" class="diff-note">Niveau déjà réussi : pas de récompense</p>
+          <p v-else-if="difficulty.reward > 1" class="diff-note">Niveau {{ difficulty.label }} : récompense × {{ difficulty.reward }}</p>
+          <p v-if="reward" class="reward pill"><AcornIcon :size="22" /> + {{ reward }}</p>
           <div class="stack">
             <button class="btn btn-primary" @click="next">{{ isLast ? 'Voir les niveaux' : 'Niveau suivant' }}</button>
             <button class="btn btn-soft" @click="retry"><Icon name="restart" :size="18" /> Rejouer</button>
@@ -260,7 +335,8 @@ onBeforeUnmount(() => {
           <h2 id="hint-title">Besoin d’un indice&nbsp;?</h2>
           <p>Les cases que tes castors peuvent construire s’illuminent pendant {{ HINT_MS / 1000 }} secondes.</p>
           <div class="stack">
-            <button class="btn btn-primary" :disabled="save.nuts < HINT_PRICE" @click="payHint">
+            <button v-if="save.freeHints > 0" class="btn btn-primary" @click="payHint">Utiliser · offert</button>
+            <button v-else class="btn btn-primary" :disabled="save.nuts < HINT_PRICE" @click="payHint">
               <AcornIcon :size="20" /> {{ HINT_PRICE }} · Utiliser
             </button>
             <button class="btn btn-soft" :disabled="adLoading" @click="watchAd(hint)">
@@ -279,7 +355,7 @@ onBeforeUnmount(() => {
           <h2 id="stuck-title">Chantier bloqué</h2>
           <p>Aucune équipe du chantier ne peut construire. Ajoute une place pour continuer.</p>
           <div class="stack">
-            <button class="btn btn-primary" :disabled="adLoading" @click="watchAd(() => game.addSlot())">
+            <button class="btn btn-primary" :disabled="adLoading" @click="watchAd(addSlot)">
               <Icon name="video" :size="20" /> {{ adLoading ? 'Chargement…' : 'Regarder une pub · +1 place' }}
             </button>
             <button class="btn btn-soft" :disabled="save.nuts < SLOT_PRICE" @click="payWithNuts">

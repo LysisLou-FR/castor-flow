@@ -1249,14 +1249,6 @@ button {
   color: #ff5d62;
 }
 
-.pill.lives small {
-  margin-left: 2px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
-}
-
 .modal-art.lives {
   place-items: center;
   padding-bottom: 0;
@@ -1282,4 +1274,110 @@ button {
 
 .lose-note .icon {
   color: #ff5d62;
+}
+
+/* ---------- Tutoriel ---------- */
+
+.coach {
+  position: absolute;
+  z-index: 3;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  border-radius: 20px;
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.35;
+  background: rgb(255 255 255 / 0.94);
+}
+
+.coach p {
+  margin: 0;
+}
+
+.coach.top {
+  top: calc(env(safe-area-inset-top) + 144px);
+}
+
+.coach.bottom {
+  bottom: 14px;
+}
+
+/* main qui pointe, en rebond */
+.coach-hand {
+  position: absolute;
+  z-index: 4;
+  font-size: 38px;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgb(20 35 65 / 0.3));
+  animation: coach-point 0.9s ease-in-out infinite;
+}
+
+.deck .coach-hand {
+  left: 50%;
+  bottom: -14px;
+  translate: -50% 0;
+}
+
+.coach-hand.hint-hand {
+  top: calc(env(safe-area-inset-top) + 84px);
+  right: 78px;
+  animation-name: coach-point-right;
+}
+
+@keyframes coach-point-right {
+  50% {
+    transform: translateX(8px);
+  }
+}
+
+@keyframes coach-point {
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow: auto;
+  padding: 8px;
+  border-radius: 14px;
+  background: #f3f6fb;
+}
+
+.stats table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.74rem;
+}
+
+.stats th,
+.stats td {
+  padding: 3px 4px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.stats th {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.stats td:first-child,
+.stats th:first-child {
+  text-align: left;
+}
+
+.stats p {
+  margin: 0;
 }

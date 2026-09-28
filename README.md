@@ -9,9 +9,12 @@ Le concept de Colony Flow inversé : au lieu de fourmis qui mangent les cubes d'
 - Le dessin se construit **colonne par colonne, de bas en haut** : seules les cases entourées de blanc sont accessibles.
 - Touche une équipe de castors pour l'envoyer au **chantier**. Ses castors partent construire les cases accessibles de leur couleur.
 - Si une équipe ne trouve rien à construire, elle occupe sa place. Quand toutes les places sont prises et que plus personne ne peut construire, le **chantier est bloqué**.
-- Pour continuer : regarder une **pub récompensée** ou payer **30 noisettes**, et tu gagnes une place de plus.
-- **Vies** (5 au maximum, une revient toutes les 20 minutes) : rater un niveau en coûte une, c'est-à-dire recommencer ou quitter après avoir envoyé au moins une équipe. Fermer l'appli en pleine partie compte aussi comme un échec. Gagner ne coûte rien. Sans vie, on ne peut plus lancer de niveau : il faut attendre, regarder une pub (+1 vie) ou payer 50 noisettes (+5 vies). Les réglages sont en haut de `src/lives.js`.
-- Les cases accessibles ne sont pas signalées : c'est au joueur de lire le dessin. Le bonus **Indice** (bouton ampoule, 15 noisettes ou une pub récompensée) les illumine pendant 6 secondes. Les prix et la durée sont en haut de `src/components/GameView.vue`.
+- Pour continuer : regarder une **pub récompensée** ou payer **90 noisettes**, et tu gagnes une place de plus.
+- **Vies** (5 au maximum, une revient toutes les 20 minutes) : rater un niveau en coûte une, c'est-à-dire recommencer ou quitter après avoir envoyé au moins une équipe. Fermer l'appli en pleine partie compte aussi comme un échec. Gagner ne coûte rien. Sans vie, on ne peut plus lancer de niveau : il faut attendre, regarder une pub (+1 vie) ou payer 120 noisettes (+5 vies). Les réglages sont en haut de `src/lives.js`.
+- Les cases accessibles ne sont pas signalées : c'est au joueur de lire le dessin. Le bonus **Indice** (bouton ampoule, 40 noisettes ou une pub récompensée, le premier est offert) les illumine pendant 6 secondes. Les prix et la durée sont en haut de `src/components/GameView.vue`.
+- **Récompense** : 20 + 2 × (numéro du niveau − 1) noisettes, × 2 en hard et × 3 en super hard. **Rejouer** un niveau déjà réussi demande de regarder une pub (sauf avec « Sans pubs ») et ne rapporte rien (`src/replay.js`).
+- **Tutoriel** : les niveaux 1, 2, 3 et 5 affichent des bulles d'aide (champ `tutorial` du niveau : `send`, `column`, `slots` ou `hint`).
+- **Statistiques de test** : Paramètres > Statistiques de jeu. Pour chaque niveau : parties, gagnées, ratées, places achetées et indices, avec un bouton pour les copier et les envoyer.
 
 ## Développement (navigateur)
 
@@ -31,7 +34,7 @@ src/
     levels.json     ← les niveaux (édités avec le map builder)
     levels.js       ← palette, difficultés, chargement des niveaux
     logic.js        ← règles pures : grille, colonnes, génération des équipes
-    study.js        ← joueurs simulés et solveur (npm run study, analyse de l'éditeur)
+    study.js        ← joueurs simulés, solveur, réglage automatique (npm run study, npm run tune)
     GameScene.js    ← rendu et animations Phaser
     art.js          ← castor, cubes, échafaudages, décor : tout est dessiné par code
     island.js       ← socle de l'île (dégradés, arrondis)
@@ -44,6 +47,8 @@ src/
     platform.js     ← Android : bouton retour, passage en arrière-plan
   store.js          ← sauvegarde (@capacitor/preferences sur Android, localStorage dans le navigateur)
   lives.js          ← vies : perte, recharge, achat
+  replay.js         ← rejouer un niveau déjà réussi (pub obligatoire)
+  stats.js          ← statistiques de test par niveau
 android/            ← projet Android Studio généré par Capacitor
 ```
 
@@ -78,6 +83,7 @@ Après avoir modifié des niveaux, lance `npm test` : il vérifie que chaque niv
 npm run study                 # tous les niveaux
 npm run study -- 7            # le niveau 7
 npm run study -- 7 --seeds 40 # compare aussi 40 graines pour ce niveau
+npm run study -- --curve      # la courbe de difficulté de tout le parcours
 ```
 
 Le script (`scripts/study-levels.mjs`, logique dans `src/game/study.js`) fait jouer des milliers de parties à plusieurs joueurs simulés :
@@ -87,7 +93,25 @@ Le script (`scripts/study-levels.mjs`, logique dans `src/game/study.js`) fait jo
 - **au hasard** : touche n'importe quelle file ;
 - **automatique** : toujours la première équipe utile.
 
-Pour chacun : le pourcentage de parties gagnées sans acheter de place, et le nombre de places achetées (pubs ou noisettes). L'éditeur affiche aussi le taux du joueur moyen et la **difficulté ressentie** : normal au-dessus de 90 %, hard de 40 à 90 %, super hard en dessous. Le modèle pose les cubes instantanément : dans le vrai jeu, les colonnes se libèrent moins vite.
+Pour chacun : le pourcentage de parties gagnées sans acheter de place, et le nombre de places achetées (pubs ou noisettes). Le modèle pose les cubes instantanément : dans le vrai jeu, les colonnes se libèrent moins vite, donc les niveaux sont un peu plus durs que les chiffres.
+
+### Régler la difficulté automatiquement
+
+Chaque niveau a une **cible** (`target`) : le taux de victoire visé pour le joueur moyen, de 0 à 1. La courbe du parcours de 40 niveaux :
+
+- niveaux 1 à 3 : tutoriel, 100 % ;
+- niveaux normaux : de 95 % (niveau 4) à 60 % (niveau 39), avec un niveau plus facile juste après chaque niveau dur ;
+- hard (niveaux 5, 15, 25 et 35) : de 72 % à 45 % ;
+- super hard (niveaux 10, 20, 30 et 40) : de 50 % à 25 %.
+
+```bash
+npm run tune          # règle tous les niveaux qui ont une cible
+npm run tune -- 12 15 # seulement les niveaux 12 et 15
+```
+
+Le script cherche la graine, puis si besoin les places, la taille des équipes et le nombre de files, qui rapprochent le joueur moyen de la cible. Le niveau reste toujours faisable par un joueur parfait. Dans l'éditeur, le champ **Objectif de difficulté** et le bouton **Trouver les réglages** font la même chose pour le niveau affiché.
+
+Un dessin qui a peu de couleurs mélangées dans ses colonnes reste facile, quels que soient les réglages : il faut le placer tôt dans le parcours. `npm test` échoue si un niveau s'éloigne de plus de 12 points de sa cible.
 
 ## Compiler l'application Android
 
@@ -150,5 +174,4 @@ Tant que `VITE_REVENUECAT_ANDROID_KEY` est vide, les achats sont simulés.
 - Sons : coups de marteau, « plouf », musique
 - Skins de castors à acheter avec des noisettes
 - Sauvegarde dans le cloud (Firebase) pour retrouver sa progression sur un autre téléphone
-- Éditeur de niveaux, ou conversion automatique d'une image en pixel art
 - Étoiles selon le nombre de places utilisées
