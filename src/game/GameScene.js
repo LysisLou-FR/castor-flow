@@ -21,10 +21,9 @@ import {
 // Le mur de cubes est posé sur la rangée gx ∈ [0, 1] ; l'herbe s'étend devant, puis la rivière.
 
 const CUBE_H = CUBE_TEX.h / CUBE_TEX.w // hauteur d'un cube, en largeur de tuile
-const GRASS_END = 3.5
-const BANK = 3.72
-const ISLAND_END = 4.95
-const THICK = 0.95
+const BANK = 2.95 // bord de la rivière
+const ISLAND_END = 4.05
+const THICK = 0.55
 const STAND_X = 1.16 // les castors se tiennent là, contre la face du mur
 const WALK_SPEED = 3.4 // tuiles par seconde
 const CLIMB_SPEED = 5.5
@@ -68,7 +67,14 @@ export class GameScene extends Phaser.Scene {
     this.hintLeft = 0 // durée restante du bonus « Indice », en ms
 
     this.buildWall()
-    this.buildDecor()
+    // hauteur de chaque colonne du mur (échafaudages compris) : longueur de son ombre sur l'herbe
+    const { w, h, cells } = this.parsed
+    this.columns = Array.from({ length: w }, (_, col) => {
+      let row = 0
+      while (row < h && cells[row * w + col] === EMPTY) row++
+      return { gy0: 1 + (w - 1 - col), height: h - row }
+    })
+    this.buildWater()
     this.relayout()
 
     this.scale.on('resize', this.relayout, this)
@@ -127,10 +133,6 @@ export class GameScene extends Phaser.Scene {
       const p = this.proj(0.5, item.gy0 + 0.5, item.z + 1)
       item.img.setPosition(p.x, p.y).setScale(cubeScale)
     }
-    for (const d of this.decor) {
-      const p = this.proj(d.gx, d.gy, d.z ?? 0)
-      d.img.setPosition(p.x, p.y).setScale((this.tw * d.size) / d.img.width)
-    }
   }
 
   // ---------- Décor ----------
@@ -143,12 +145,10 @@ export class GameScene extends Phaser.Scene {
     canvas.height = height
     paintIsland(canvas.getContext('2d'), (gx, gy, z) => this.proj(gx, gy, z), {
       GY: this.GY,
-      GRASS_END,
       BANK,
       END: ISLAND_END,
       THICK,
-      WALL_FROM: 0.7,
-      WALL_TO: this.GY - 0.7,
+      columns: this.columns,
     })
     if (this.textures.exists('island')) this.textures.remove('island')
     this.textures.addCanvas('island', canvas)
@@ -156,38 +156,55 @@ export class GameScene extends Phaser.Scene {
     else this.ground = this.add.image(0, 0, 'island').setOrigin(0, 0).setDepth(DEPTH.ground)
   }
 
-  buildDecor() {
-    const GY = this.GY
-    const at = (key, gx, gy, size, depth, originY = 1) => {
-      const img = this.add.image(0, 0, key).setOrigin(0.5, originY).setDepth(depth)
-      this.decor.push({ img, gx, gy, size })
-      return img
-    }
-    this.decor = []
-    at('rock', GRASS_END - 0.45, 0.45, 0.55, DEPTH.actors + (GRASS_END + 0.4) * 10, 0.8)
-    at('rock', 2.4, GY - 0.35, 0.4, DEPTH.actors + (2.4 + GY) * 10, 0.8)
-    at('lodge', 4.4, 1.5, 1.7, DEPTH.actors + (4.4 + 1.5) * 10, 0.875)
+  /** Reflets qui suivent le courant, et écume qui vient lécher la berge (redessinés à chaque image). */
+  buildWater() {
+    const rand = Phaser.Math.FloatBetween
+    this.water = this.add.graphics().setDepth(DEPTH.ripple)
+    this.streaks = Array.from({ length: 7 }, (_, n) => ({
+      gx: BANK + 0.3 + ((n + rand(0.1, 0.9)) / 7) * (ISLAND_END - BANK - 0.55),
+      len: rand(0.7, 1.4),
+      speed: rand(0.22, 0.4), // tuiles par seconde
+      offset: rand(0, 40),
+      alpha: rand(0.22, 0.38),
+      phase: rand(0, 6),
+    }))
+  }
 
-    // reflets qui scintillent sur la rivière
-    for (let n = 0; n < 9; n++) {
-      const img = at(
-        'ripple',
-        Phaser.Math.FloatBetween(BANK + 0.35, ISLAND_END - 0.25),
-        Phaser.Math.FloatBetween(0.6, GY - 0.6),
-        0.35,
-        DEPTH.ripple,
-        0.5,
-      )
-      img.setAlpha(0)
-      this.tweens.add({
-        targets: img,
-        alpha: { from: 0, to: 0.7 },
-        duration: 1400,
-        yoyo: true,
-        repeat: -1,
-        delay: n * 450,
-        ease: 'Sine.easeInOut',
-      })
+  drawWater(time) {
+    const g = this.water
+    const t = time / 1000
+    const GY = this.GY
+    const lw = this.tw * 0.022
+    const fade = (gy) => Phaser.Math.Clamp(Math.min(gy - 0.45, GY - 0.45 - gy) / 0.7, 0, 1) // bords arrondis de l'île
+    const segment = (gx1, gy1, gx2, gy2, width, alpha) => {
+      if (alpha <= 0.01) return
+      const p1 = this.proj(gx1, gy1)
+      const p2 = this.proj(gx2, gy2)
+      g.lineStyle(width, 0xffffff, alpha)
+      g.lineBetween(p1.x, p1.y, p2.x, p2.y)
+    }
+    g.clear()
+
+    // écume : une ligne douce qui ondule le long de la berge
+    const step = 0.14
+    const shore = (gy) => BANK + 0.07 + 0.03 * Math.sin(gy * 3.1 - t * 1.6) + 0.02 * Math.sin(t * 0.9 + gy * 0.4)
+    for (let gy = 0.45; gy < GY - 0.45; gy += step) {
+      const alpha = (0.32 + 0.14 * Math.sin(gy * 1.7 + t * 1.2)) * Math.min(fade(gy), fade(gy + step))
+      segment(shore(gy), gy, shore(gy + step), gy + step, lw * 1.5, alpha)
+    }
+
+    // reflets : de courts traits qui dérivent avec le courant, effilés aux deux bouts
+    for (const s of this.streaks) {
+      const span = GY + s.len
+      const start = ((s.offset + t * s.speed) % span) - s.len
+      const n = 8
+      const wave = (gy) => s.gx + 0.035 * Math.sin(gy * 2.2 + t * 1.3 + s.phase)
+      for (let k = 0; k < n; k++) {
+        const gy1 = start + (s.len * k) / n
+        const gy2 = start + (s.len * (k + 1)) / n
+        const taper = Math.sin((Math.PI * (k + 0.5)) / n)
+        segment(wave(gy1), gy1, wave(gy2), gy2, lw, s.alpha * taper * Math.min(fade(gy1), fade(gy2)))
+      }
     }
   }
 
@@ -549,6 +566,7 @@ export class GameScene extends Phaser.Scene {
   update(time, delta) {
     const dt = Math.min(delta, 50) / 1000
     this.updateHint(time, delta)
+    this.drawWater(time)
     for (const b of this.beavers) {
       this.stepBeaver(b, dt)
       this.renderBeaver(b)
