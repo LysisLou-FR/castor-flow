@@ -83,7 +83,10 @@ const INNER_EAR = '#F3B489'
 const MUZZLE = '#F8D4A8'
 const NOSE = '#4A2616'
 const EYE = '#3B2A22'
-const PAW = '#B0632C'
+const PAW = '#C06B2E' // pattes : un ton sous le pelage
+const BEAN = '#F6BC93' // coussinets, du rose de l'intérieur des oreilles
+const FOOT = '#AD5E27'
+const BLUSH = 'rgba(255,128,120,0.38)'
 const TAIL = '#9A5424'
 
 const e = (cx, cy, rx, ry, fill, extra = {}) => ({ t: 'e', cx, cy, rx, ry, fill, ...extra })
@@ -137,10 +140,25 @@ function tail(cx, cy) {
   return [e(cx, cy, 19, 8.5, TAIL, { rot }), ...lines]
 }
 
+/**
+ * Patoune ronde avec trois petits coussinets au bout. `rot` : direction des doigts (0 = vers le haut).
+ * `size` : rayon de la patte, en unités.
+ */
+function paw(cx, cy, rot = 0, size = 4.6) {
+  const at = (dx, dy) => [cx + dx * Math.cos(rot) - dy * Math.sin(rot), cy + dx * Math.sin(rot) + dy * Math.cos(rot)]
+  const beans = [-0.52, 0, 0.52].map((dx, n) => {
+    const [x, y] = at(dx * size, -size * (n === 1 ? 0.62 : 0.5))
+    return e(x, y, size * 0.21, size * 0.19, BEAN)
+  })
+  return [e(cx, cy, size, size * 1.08, PAW, { rot }), ...beans]
+}
+
 const BODY_FRONT = [e(50, 71, 20.5, 19, FUR), e(56, 76, 11, 11.5, MUZZLE)]
 const BODY_BACK = [e(50, 71, 20.5, 19, FUR)]
-const ARMS_FRONT = [e(47, 72, 3, 5.4, PAW, { rot: 0.75 }), e(65, 71, 3.1, 5.6, PAW, { rot: -0.7 })]
-const HEAD_FRONT = [...EARS, icon(ICON_HEAD, HEAD, HEAD_M), ...FACE_BASE]
+const ARMS_FRONT = [...paw(45.5, 71.5, 0.45), ...paw(66.5, 70.5, -0.4)] // patounes posées sur le ventre
+// joues roses, sous les yeux
+const BLUSHES = [e(40.5, 51, 3.6, 2.2, BLUSH), e(72, 51, 3.6, 2.2, BLUSH)]
+const HEAD_FRONT = [...EARS, icon(ICON_HEAD, HEAD, HEAD_M), ...BLUSHES, ...FACE_BASE]
 const HEAD_BACK = [...EARS_BACK, icon(ICON_HEAD, HEAD, HEAD_M)]
 
 /** Castor de face, pattes sur le ventre. */
@@ -152,11 +170,14 @@ export const BEAVER_FRONT_CARRY = [...tail(28, 79), ...BODY_FRONT, ...HEAD_FRONT
 /** Castor de dos. */
 export const BEAVER_BACK = [...BODY_BACK, ...HEAD_BACK, ...tail(71, 86)]
 /** Pattes qui tiennent le cube sur la tête (face et dos). */
-export const BEAVER_PAWS_FRONT = [e(37.5, 16.5, 4.2, 4.8, PAW), e(64.5, 16.5, 4.2, 4.8, PAW)]
-export const BEAVER_PAWS_BACK = BEAVER_PAWS_FRONT
+export const BEAVER_PAWS_FRONT = [...paw(37, 17, -0.25, 4.8), ...paw(65, 17, 0.25, 4.8)]
+// de dos, on voit le dessus des pattes : pas de coussinets
+export const BEAVER_PAWS_BACK = [e(37, 17, 4.8, 5.2, PAW, { rot: -0.25 }), e(65, 17, 4.8, 5.2, PAW, { rot: 0.25 })]
 
 /** Pied (repère 18×10). */
-export const BEAVER_FOOT = [e(9, 5, 6.5, 3.8, '#8F4E22')]
+// pied dodu à trois orteils ronds : vers nous de face, vers le mur de dos
+export const BEAVER_FOOT = [e(9, 4.2, 7, 3.6, FOOT), e(4.3, 6.1, 2.4, 2.1, FOOT), e(9, 6.9, 2.5, 2.2, FOOT), e(13.7, 6.1, 2.4, 2.1, FOOT)]
+export const BEAVER_FOOT_BACK = [e(9, 5.8, 7, 3.6, FOOT), e(4.3, 3.9, 2.4, 2.1, FOOT), e(9, 3.1, 2.5, 2.2, FOOT), e(13.7, 3.9, 2.4, 2.1, FOOT)]
 export const FOOT_FRAME = { w: 18, h: 10 }
 
 /** Position des éléments par rapport au point au sol du castor (50, 92), en unités. */
@@ -467,7 +488,8 @@ export function makeBeaverTextures(scene) {
   shapesTexture(scene, 'bv-back', BEAVER_BACK, 100, 100)
   shapesTexture(scene, 'bv-paws-front', BEAVER_PAWS_FRONT, 100, 100)
   shapesTexture(scene, 'bv-paws-back', BEAVER_PAWS_BACK, 100, 100)
-  shapesTexture(scene, 'beaver-foot', BEAVER_FOOT, FOOT_FRAME.w, FOOT_FRAME.h)
+  shapesTexture(scene, 'bv-foot-front', BEAVER_FOOT, FOOT_FRAME.w, FOOT_FRAME.h)
+  shapesTexture(scene, 'bv-foot-back', BEAVER_FOOT_BACK, FOOT_FRAME.w, FOOT_FRAME.h)
 }
 
 /** Petites textures d'ambiance : ombre, éclaboussure, poussière, confettis, rocher, hutte. */

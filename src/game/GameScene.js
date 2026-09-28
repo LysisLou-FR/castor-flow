@@ -344,8 +344,8 @@ export class GameScene extends Phaser.Scene {
     const lane = gy0 + 0.5 + Phaser.Math.FloatBetween(-0.12, 0.12)
     const bodyOrigin = [(BEAVER_RIG.groundX + PAD) / (100 + PAD * 2), (BEAVER_RIG.groundY + PAD) / (100 + PAD * 2)]
     // les pieds sont derrière le corps : ils dépassent juste en dessous
-    const backFoot = this.add.image(0, 0, 'beaver-foot')
-    const frontFoot = this.add.image(0, 0, 'beaver-foot')
+    const backFoot = this.add.image(0, 0, 'bv-foot-back')
+    const frontFoot = this.add.image(0, 0, 'bv-foot-back')
     const body = this.add.image(0, 0, 'bv-back').setOrigin(...bodyOrigin)
     const cube = this.add
       .image(0, 0, `cube-${color}`)
@@ -425,8 +425,10 @@ export class GameScene extends Phaser.Scene {
   updateLook(b) {
     const view = b.face === 1 ? 'front' : 'back'
     const key = view === 'back' ? 'bv-back' : b.carrying ? 'bv-front-carry' : b.happy ? 'bv-front-happy' : 'bv-front'
-    const { body, paws, cube } = b.parts
+    const { body, paws, cube, backFoot, frontFoot } = b.parts
     if (body.texture.key !== key) body.setTexture(key)
+    backFoot.setTexture(`bv-foot-${view}`)
+    frontFoot.setTexture(`bv-foot-${view}`)
     paws.setTexture(`bv-paws-${view}`).setVisible(b.carrying)
     cube.setVisible(b.carrying)
     b.view = view
