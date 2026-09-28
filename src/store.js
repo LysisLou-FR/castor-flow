@@ -5,7 +5,7 @@ import { reactive, watch } from 'vue'
 // ou Firebase pour une sauvegarde dans le cloud.
 const KEY = 'cubiver-save-v1'
 const OLD_KEY = 'castor-flow-save-v1' // nom du prototype : sa sauvegarde est reprise automatiquement
-const defaults = { unlocked: 1, nuts: 0, noAds: false, wins: 0 }
+const defaults = { unlocked: 1, nuts: 0, noAds: false, wins: 0, sound: true }
 
 function load() {
   try {

@@ -14,7 +14,7 @@ import { generateCrews } from './logic.js'
  */
 export function createGame(parent, { level, levelIndex, parsed, state, onWin, onLose }) {
   Object.assign(state, {
-    lanes: generateCrews(parsed, { ...level, seed: levelIndex + 1 }),
+    lanes: generateCrews(parsed, level), // graine et difficulté propres au niveau
     slots: new Array(level.slots).fill(null),
     progress: 0,
     status: 'playing',

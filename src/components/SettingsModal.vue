@@ -1,0 +1,82 @@
+<script setup>
+import { ref } from 'vue'
+import { version } from '../../package.json'
+import { pop } from '../game/sfx.js'
+import { privacyOptionsRequired, showPrivacyOptions } from '../services/ads.js'
+import { isDemo, restore } from '../services/purchases.js'
+import { save } from '../store.js'
+import Icon from './ui/Icon.vue'
+
+const emit = defineEmits(['close'])
+const message = ref('')
+const busy = ref(false)
+const confirmReset = ref(false)
+
+function toggleSound() {
+  save.sound = !save.sound
+  if (save.sound) pop(0.5) // aperçu du son
+}
+
+async function restorePurchases() {
+  busy.value = true
+  try {
+    await restore()
+    message.value = isDemo ? 'Mode démo : rien à restaurer.' : 'Achats restaurés.'
+  } catch (err) {
+    message.value = 'La restauration a échoué.'
+    console.warn(err)
+  } finally {
+    busy.value = false
+  }
+}
+
+/** Repart du niveau 1 ; garde les noisettes et « Sans pubs » (déjà payés). */
+function resetProgress() {
+  save.unlocked = 1
+  save.wins = 0
+  confirmReset.value = false
+  message.value = 'Progression réinitialisée.'
+}
+</script>
+
+<template>
+  <div class="modal-backdrop" @click.self="emit('close')">
+    <section class="modal settings" role="dialog" aria-labelledby="settings-title">
+      <header class="settings-head">
+        <h2 id="settings-title">Paramètres</h2>
+        <button class="icon-btn" aria-label="Fermer" @click="emit('close')"><Icon name="close" /></button>
+      </header>
+
+      <button class="setting-row" role="switch" :aria-checked="save.sound" @click="toggleSound">
+        <Icon :name="save.sound ? 'sound' : 'mute'" />
+        <span>Son</span>
+        <span class="switch" :class="{ on: save.sound }"><i></i></span>
+      </button>
+
+      <button class="setting-row" :disabled="busy" @click="restorePurchases">
+        <Icon name="restart" />
+        <span>Restaurer mes achats</span>
+      </button>
+
+      <button v-if="privacyOptionsRequired" class="setting-row" @click="showPrivacyOptions">
+        <Icon name="shield" />
+        <span>Confidentialité et publicités</span>
+      </button>
+
+      <button v-if="!confirmReset" class="setting-row danger" @click="confirmReset = true">
+        <Icon name="trash" />
+        <span>Réinitialiser la progression</span>
+      </button>
+      <div v-else class="confirm-reset">
+        <p>Recommencer au niveau 1 ? Tes noisettes et tes achats sont conservés.</p>
+        <div class="confirm-actions">
+          <button class="btn btn-soft btn-small" @click="confirmReset = false">Annuler</button>
+          <button class="btn btn-primary btn-small" @click="resetProgress">Réinitialiser</button>
+        </div>
+      </div>
+
+      <p v-if="message" class="settings-msg" role="status">{{ message }}</p>
+      <small class="muted">Cubiver · version {{ version }}</small>
+    </section>
+  </div>
+</template>

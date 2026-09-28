@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",
     "android": "vite build && cap sync android && cap open android",
-    "icons": "node scripts/build-icons.mjs && capacitor-assets generate --android --iconBackgroundColor \"#d9853f\" --iconBackgroundColorDark \"#d9853f\" && node scripts/build-icons.mjs --fix-android"
+    "icons": "node scripts/build-icons.mjs && capacitor-assets generate --android --iconBackgroundColor \"#d9853f\" --iconBackgroundColorDark \"#d9853f\" && node scripts/build-icons.mjs --fix-android",
+    "builder": "vite --open /builder.html",
+    "study": "node scripts/study-levels.mjs"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",

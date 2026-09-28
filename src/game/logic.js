@@ -1,6 +1,6 @@
 // Règles du jeu, sans aucune dépendance à Phaser : testable avec `npm test`.
 
-import { PALETTE } from './levels.js'
+import { DIFFICULTIES, PALETTE } from './levels.js'
 
 export const EMPTY = -1
 export const CELL = { TODO: 0, CLAIMED: 1, BUILT: 2 }
@@ -109,10 +109,10 @@ export function rng(seed) {
 
 /**
  * Découpe les blocs à construire en équipes de castors ({ color, count }) réparties dans des files.
- * Les équipes suivent à peu près l'ordre de construction (de bas en haut), légèrement mélangé
- * pour laisser des choix au joueur.
+ * Les équipes suivent à peu près l'ordre de construction (de bas en haut), puis sont mélangées
+ * selon la difficulté : plus le mélange est fort, plus il faut anticiper.
  */
-export function generateCrews(parsed, { crewSize, queues, seed = 1 }) {
+export function generateCrews(parsed, { crewSize, queues, seed = 1, difficulty = 'normal' }) {
   const { w, h, cells } = parsed
   const crews = []
   const open = new Map() // couleur -> équipe en cours de remplissage
@@ -132,9 +132,16 @@ export function generateCrews(parsed, { crewSize, queues, seed = 1 }) {
     }
   }
 
+  // Mélange : `passes` passages, chaque équipe a `chance` d'être échangée avec une équipe
+  // jusqu'à `reach` places plus loin
+  const { passes, chance, reach } = (DIFFICULTIES[difficulty] ?? DIFFICULTIES.normal).shuffle
   const rand = rng(seed)
-  for (let i = 0; i < crews.length - 1; i++) {
-    if (rand() < 0.35) [crews[i], crews[i + 1]] = [crews[i + 1], crews[i]]
+  for (let pass = 0; pass < passes; pass++) {
+    for (let i = 0; i < crews.length - 1; i++) {
+      if (rand() >= chance) continue
+      const j = Math.min(crews.length - 1, i + 1 + (reach > 1 ? Math.floor(rand() * reach) : 0))
+      ;[crews[i], crews[j]] = [crews[j], crews[i]]
+    }
   }
 
   const lanes = Array.from({ length: queues }, () => [])

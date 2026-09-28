@@ -1,7 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { LEVELS } from '../src/game/levels.js'
+import { DIFFICULTIES, LEVELS, PALETTE } from '../src/game/levels.js'
 import { Board, CELL, generateCrews, parseLevel } from '../src/game/logic.js'
+import { solve } from '../src/game/study.js'
 
 test('les colonnes se construisent de bas en haut', () => {
   const board = new Board(parseLevel({ name: 't', art: ['R.', 'RB'] }))
@@ -13,44 +14,26 @@ test('les colonnes se construisent de bas en haut', () => {
   assert.equal(board.state[2], CELL.BUILT)
 })
 
-/** Joueur automatique « naïf » : prouve que chaque niveau est faisable. */
-function autoplay(level) {
-  const parsed = parseLevel(level)
-  const board = new Board(parsed)
-  const lanes = generateCrews(parsed, { ...level, seed: 1 })
-  const slots = []
-  for (let turn = 0; turn < 10000; turn++) {
-    let progressed = true
-    while (progressed) {
-      progressed = false
-      for (const crew of slots) {
-        const i = crew.count > 0 ? board.findTarget(crew.color) : -1
-        if (i === -1) continue
-        board.claim(i)
-        board.build(i)
-        crew.count--
-        progressed = true
-      }
-      for (let s = slots.length - 1; s >= 0; s--) if (slots[s].count === 0) slots.splice(s, 1)
-    }
-    if (board.isComplete()) return true
-    if (slots.length >= level.slots) return false
-    const fronts = lanes.filter((l) => l.length)
-    const useful = fronts.find((l) => board.findTarget(l[0].color) !== -1) ?? fronts[0]
-    if (!useful) return false
-    slots.push({ ...useful.shift() })
-  }
-  return false
-}
+test('le mélange des équipes est plus fort en difficulté supérieure', () => {
+  const art = Array.from({ length: 8 }, () => 'RGBYOPRGBYOP')
+  const order = (difficulty) =>
+    generateCrews(parseLevel({ name: 't', art }), { crewSize: 3, queues: 1, seed: 3, difficulty })[0].map((c) => c.id)
+  const displacement = (ids) => ids.reduce((sum, id, i) => sum + Math.abs(id - i), 0)
+  assert.ok(displacement(order('hard')) > displacement(order('normal')))
+  assert.ok(displacement(order('superhard')) > displacement(order('hard')))
+})
 
-for (const level of LEVELS) {
-  test(`niveau « ${level.name} » : équipes cohérentes et niveau faisable`, () => {
+for (const [n, level] of LEVELS.entries()) {
+  test(`niveau ${n + 1} « ${level.name} » : données valides, équipes cohérentes, niveau faisable`, () => {
+    assert.ok(level.difficulty in DIFFICULTIES, `difficulté inconnue : ${level.difficulty}`)
+    assert.ok(Number.isInteger(level.seed), 'graine manquante')
+    assert.ok(level.art.every((row) => [...row].every((ch) => ch === '.' || ch in PALETTE)))
     const parsed = parseLevel(level)
-    const lanes = generateCrews(parsed, { ...level, seed: 1 })
+    const lanes = generateCrews(parsed, level)
     const blocks = parsed.cells.filter((c) => c !== -1).length
-    const beavers = lanes.flat().reduce((n, c) => n + c.count, 0)
+    const beavers = lanes.flat().reduce((sum, c) => sum + c.count, 0)
     assert.equal(beavers, blocks, 'un castor par bloc')
     assert.ok(lanes.flat().every((c) => c.count <= level.crewSize))
-    assert.ok(autoplay(level), 'le joueur automatique doit pouvoir finir le niveau')
+    assert.equal(solve(level).solvable, true, 'un joueur parfait doit pouvoir finir le niveau sans acheter de place')
   })
 }

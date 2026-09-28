@@ -1,5 +1,5 @@
 <script setup>
-import { LEVELS, PALETTE } from '../game/levels.js'
+import { DIFFICULTIES, LEVELS, PALETTE } from '../game/levels.js'
 import { hex } from '../game/art.js'
 import { save } from '../store.js'
 import NutCounter from './NutCounter.vue'
@@ -10,6 +10,7 @@ const emit = defineEmits(['play', 'back'])
 const levels = LEVELS.map((level, index) => ({
   index,
   name: level.name,
+  difficulty: level.difficulty,
   cols: level.art[0].length,
   size: `${level.art[0].length}×${level.art.length}`,
   pixels: level.art.join('').split('').map((ch) => (ch === '.' ? null : hex(PALETTE[ch]))),
@@ -40,6 +41,7 @@ const levels = LEVELS.map((level, index) => ({
         <span class="level-meta">
           <strong>{{ level.index + 1 }}. {{ level.index < save.unlocked ? level.name : '???' }}</strong>
           <small>{{ level.size }}</small>
+          <span v-if="level.difficulty !== 'normal'" class="diff-badge" :class="level.difficulty">{{ DIFFICULTIES[level.difficulty].label }}</span>
         </span>
         <span v-if="level.index >= save.unlocked" class="badge lock"><Icon name="lock" :size="15" /></span>
         <span v-else-if="level.index < save.unlocked - 1" class="badge ok"><Icon name="check" :size="15" /></span>

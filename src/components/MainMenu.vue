@@ -1,15 +1,16 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { LEVELS } from '../game/levels.js'
-import { privacyOptionsRequired, showPrivacyOptions } from '../services/ads.js'
 import { save } from '../store.js'
 import NutCounter from './NutCounter.vue'
+import SettingsModal from './SettingsModal.vue'
 import BeaverHead from './ui/BeaverHead.vue'
 import CubeBackdrop from './ui/CubeBackdrop.vue'
 import Icon from './ui/Icon.vue'
 
 const emit = defineEmits(['play', 'navigate'])
 const current = computed(() => Math.min(save.unlocked, LEVELS.length) - 1)
+const settings = ref(false)
 </script>
 
 <template>
@@ -17,7 +18,7 @@ const current = computed(() => Math.min(save.unlocked, LEVELS.length) - 1)
     <!-- même concept que l'icône de l'appli : la tête du castor sur un fond de cubes -->
     <CubeBackdrop class="menu-backdrop" />
     <header class="topbar">
-      <span></span>
+      <button class="icon-btn glass" aria-label="Paramètres" @click="settings = true"><Icon name="gear" /></button>
       <NutCounter class="glass" />
     </header>
 
@@ -39,9 +40,12 @@ const current = computed(() => Math.min(save.unlocked, LEVELS.length) - 1)
         <button class="tile glass" @click="emit('navigate', 'levels')"><Icon name="grid" /> Niveaux</button>
         <button class="tile glass" @click="emit('navigate', 'shop')"><Icon name="bag" /> Boutique</button>
       </div>
-      <button v-if="privacyOptionsRequired" class="btn btn-link" @click="showPrivacyOptions">
-        <Icon name="shield" :size="16" /> Confidentialité et publicités
-      </button>
     </nav>
+
+    <Teleport to="body">
+      <Transition name="fade">
+        <SettingsModal v-if="settings" @close="settings = false" />
+      </Transition>
+    </Teleport>
   </main>
 </template>

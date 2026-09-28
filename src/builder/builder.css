@@ -1,0 +1,434 @@
+:root {
+  --ink: #1f2b47;
+  --ink-soft: #5d6a88;
+  --bg: #eef3fa;
+  --panel: #ffffff;
+  --line: #dbe3ef;
+  --accent: #ff8a2c;
+  --ok: #22b867;
+  --ko: #e24b4b;
+  font-family: 'Fredoka Variable', system-ui, sans-serif;
+  color: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 10px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--ink-soft);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+button.danger {
+  color: var(--ko);
+}
+
+button.link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  align-self: flex-start;
+}
+
+input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+input[type='number'] {
+  width: 70px;
+}
+
+.loading {
+  padding: 40px;
+  text-align: center;
+}
+
+.builder {
+  display: grid;
+  grid-template-columns: 260px 1fr 330px;
+  gap: 16px;
+  height: 100vh;
+  padding: 16px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: 0 6px 20px rgb(28 58 110 / 0.08);
+  overflow-y: auto;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.panel-head h1 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.dirty {
+  font-size: 0.8rem;
+  color: var(--ok);
+}
+
+.dirty.on {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.muted {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+/* Liste */
+.levels {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.level-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 6px;
+}
+
+.level-item.active {
+  background: #fff4e8;
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.mini {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  align-content: end;
+  gap: 1px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #e6f2fb;
+}
+
+.mini i {
+  aspect-ratio: 1;
+}
+
+.level-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.level-text strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.diff-normal {
+  color: var(--ink-soft);
+}
+
+.diff-hard {
+  color: #e07a14;
+}
+
+.diff-superhard {
+  color: #8a3fd1;
+}
+
+/* Dessin */
+.canvas-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  overflow: auto;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 640px;
+}
+
+.tools,
+.history {
+  display: flex;
+  gap: 6px;
+}
+
+.palette {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.swatch {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border: 3px solid #fff;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.swatch.active {
+  box-shadow: 0 0 0 3px var(--ink);
+}
+
+.swatch span {
+  position: absolute;
+  right: 2px;
+  bottom: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgb(0 0 0 / 0.45);
+}
+
+.grid {
+  display: grid;
+  gap: 1px;
+  padding: 1px;
+  background: #cfd9e8;
+  border-radius: 6px;
+  touch-action: none;
+  user-select: none;
+  cursor: crosshair;
+}
+
+.cell {
+  display: block;
+}
+
+.cell.empty {
+  background:
+    linear-gradient(45deg, #f3f6fb 25%, transparent 25%, transparent 75%, #f3f6fb 75%),
+    linear-gradient(45deg, #f3f6fb 25%, #ffffff 25%, #ffffff 75%, #f3f6fb 75%);
+  background-size: 8px 8px;
+  background-position:
+    0 0,
+    4px 4px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+/* Réglages */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field > span {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.segmented {
+  display: flex;
+  gap: 6px;
+}
+
+.segmented button {
+  flex: 1;
+}
+
+.segmented button.active.diff-hard {
+  background: #e07a14;
+  border-color: #e07a14;
+}
+
+.segmented button.active.diff-superhard {
+  background: #8a3fd1;
+  border-color: #8a3fd1;
+}
+
+.file {
+  position: relative;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.params label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.analysis.ok {
+  background: #e7f8ee;
+}
+
+.analysis.ko {
+  background: #fdeaea;
+}
+
+.analysis.ok strong {
+  color: var(--ok);
+}
+
+.analysis.ko strong {
+  color: var(--ko);
+}
+
+.analysis dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  margin: 6px 0 0;
+}
+
+.analysis dt {
+  color: var(--ink-soft);
+}
+
+.analysis dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.lanes {
+  display: flex;
+  gap: 8px;
+}
+
+.lane {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.crew {
+  display: grid;
+  place-items: center;
+  height: 22px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgb(0 0 0 / 0.55);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions button {
+  flex: 1;
+}
+
+.message {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.analysis dd.mismatch {
+  color: #c77700;
+}

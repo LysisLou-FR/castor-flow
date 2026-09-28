@@ -12,6 +12,12 @@ function play(index) {
   levelIndex.value = index
   screen.value = 'game'
 }
+
+// En dev, le bouton « Tester » du map builder ouvre /?play=N pour lancer directement le niveau N
+if (import.meta.env.DEV) {
+  const n = Number(new URLSearchParams(location.search).get('play'))
+  if (Number.isInteger(n) && n >= 0 && new URLSearchParams(location.search).has('play')) play(n)
+}
 </script>
 
 <template>

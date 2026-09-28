@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { Board, EMPTY } from './logic.js'
 import { paintIsland } from './island.js'
+import { pop } from './sfx.js'
 import {
   BEAVER_RES,
   BEAVER_RIG,
@@ -488,7 +489,18 @@ export class GameScene extends Phaser.Scene {
       .setScale(scale * 0.7)
     const ghost = this.ghosts[i]
     // le fantôme reste visible sous le cube qui tombe, puis disparaît quand le cube est en place
-    this.tweens.add({ targets: img, y: p.y, scale, duration: 190, ease: 'Back.easeOut', onComplete: () => ghost.setVisible(false) })
+    // « pop » quand le cube touche sa place, un peu plus aigu en haut du dessin
+    this.tweens.add({
+      targets: img,
+      y: p.y,
+      scale,
+      duration: 190,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        ghost.setVisible(false)
+        pop(z / Math.max(1, this.parsed.h - 1))
+      },
+    })
     this.wallItems.push({ img, gy0, z })
     this.cubes.push(img)
 

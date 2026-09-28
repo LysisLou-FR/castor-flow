@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { LEVELS } from '../game/levels.js'
+import { DIFFICULTIES, LEVELS } from '../game/levels.js'
 import { parseLevel } from '../game/logic.js'
 import { hex } from '../game/art.js'
 import { createGame } from '../game/createGame.js'
@@ -22,6 +22,7 @@ const DECK_VISIBLE = 3
 const level = LEVELS[props.levelIndex]
 const parsed = parseLevel(level)
 const isLast = props.levelIndex === LEVELS.length - 1
+const difficulty = DIFFICULTIES[level.difficulty] ?? DIFFICULTIES.normal
 
 const stage = ref(null)
 const state = reactive({ lanes: [], slots: [], progress: 0, status: 'playing' })
@@ -58,7 +59,7 @@ function showToast(message) {
 }
 
 function onWin() {
-  reward.value = 10 + props.levelIndex * 5
+  reward.value = (10 + props.levelIndex * 5) * difficulty.reward // hard × 2, super hard × 3
   save.nuts += reward.value
   save.wins++
   save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, props.levelIndex + 2))
@@ -114,6 +115,7 @@ onBeforeUnmount(() => game?.destroy())
           <div class="hud-title">
             <span class="hud-num">{{ levelIndex + 1 }}</span>
             <strong>{{ level.name }}</strong>
+            <span v-if="level.difficulty !== 'normal'" class="diff-badge" :class="level.difficulty">{{ difficulty.label }}</span>
             <span class="hud-pct">{{ percent }} %</span>
           </div>
           <div class="bar" role="progressbar" :aria-valuenow="percent" aria-valuemin="0" aria-valuemax="100">
@@ -193,6 +195,7 @@ onBeforeUnmount(() => game?.destroy())
           <div class="modal-art"><BeaverMark :size="96" happy /></div>
           <h2 id="win-title">Chef-d’œuvre !</h2>
           <p>« {{ level.name }} » est construit, bloc par bloc.</p>
+          <p v-if="difficulty.reward > 1" class="diff-note">Niveau {{ difficulty.label }} : récompense × {{ difficulty.reward }}</p>
           <p class="reward pill"><AcornIcon :size="22" /> + {{ reward }}</p>
           <div class="stack">
             <button class="btn btn-primary" @click="next">{{ isLast ? 'Voir les niveaux' : 'Niveau suivant' }}</button>

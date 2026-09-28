@@ -27,12 +27,16 @@ Dans la console du navigateur, en mode développement, `cubiverDebug.scene` donn
 ```
 src/
   game/
-    levels.js       ← les niveaux (pixel art en texte, facile à éditer)
+    levels.json     ← les niveaux (édités avec le map builder)
+    levels.js       ← palette, difficultés, chargement des niveaux
     logic.js        ← règles pures : grille, colonnes, génération des équipes
+    study.js        ← joueurs simulés et solveur (npm run study, analyse de l'éditeur)
     GameScene.js    ← rendu et animations Phaser
-    textures.js     ← castor, blocs et cartes dessinés par code (aucune image)
+    art.js          ← castor, cubes, échafaudages, décor : tout est dessiné par code
+    island.js       ← socle de l'île (dégradés, arrondis)
     createGame.js   ← pont entre Phaser et Vue
   components/       ← écrans Vue : menu, niveaux, jeu, boutique
+  builder/          ← map builder (outil de dev, npm run builder)
   services/
     ads.js          ← AdMob : vidéo récompensée, interstitiel, consentement RGPD
     purchases.js    ← RevenueCat : « Sans pubs », packs de noisettes, restauration
@@ -40,9 +44,47 @@ src/
 android/            ← projet Android Studio généré par Capacitor
 ```
 
-### Ajouter un niveau
+### Créer des niveaux : le map builder
 
-Ajoute une entrée dans `src/game/levels.js` : une lettre = une couleur de `PALETTE`, `.` = case vide. Lance ensuite `npm test` pour vérifier que le niveau est faisable avec les réglages `crewSize` (taille des équipes), `queues` (nombre de files) et `slots` (places au chantier).
+```bash
+npm run builder
+```
+
+Cette commande ouvre l'éditeur de niveaux (`/builder.html`) dans ton navigateur. C'est un outil de développement : il n'est jamais inclus dans l'appli livrée. Il lit et enregistre directement `src/game/levels.json`.
+
+- **Liste** : créer, dupliquer, monter ou descendre, supprimer des niveaux. L'ordre de la liste est l'ordre du jeu.
+- **Dessin** :
+  - outils crayon (B), gomme (E), pot de peinture (G) et pipette (I) ;
+  - touches 1 à 0 pour choisir une couleur de la palette, clic droit pour gommer ;
+  - Ctrl+Z et Ctrl+Y pour annuler et rétablir ;
+  - boutons pour décaler le dessin.
+- **Importer une image** : l'image est réduite à la taille de la grille (posée en bas, centrée) et convertie aux couleurs de la palette, avec un nombre maximum de couleurs.
+- **Difficulté** : `Normal`, `Hard` ou `Super hard`.
+  - Elle mélange plus ou moins l'ordre d'arrivée des équipes, et multiplie la récompense (× 1, × 2, × 3).
+  - Dans le jeu, les niveaux hard et super hard portent un badge.
+  - Les réglages de chaque difficulté sont dans `DIFFICULTIES` (`src/game/levels.js`).
+- **Réglages** : taille des équipes, nombre de files, places au chantier, et **graine** du tirage (🎲 pour un autre ordre des équipes).
+- **Analyse en direct** : faisable ou non, nombre de blocs, de couleurs et d'équipes, et **places nécessaires**. Ce dernier chiffre est le minimum trouvé par un joueur automatique ; un joueur attentif fait parfois mieux. L'éditeur affiche aussi les files d'équipes dans leur ordre d'arrivée.
+- **Enregistrer** (Ctrl+S) écrit `levels.json`. **Tester dans le jeu** enregistre puis ouvre le jeu directement sur ce niveau (`/?play=N`, uniquement en dev).
+
+Après avoir modifié des niveaux, lance `npm test` : il vérifie que chaque niveau est valide et qu'un joueur parfait peut le finir sans acheter de place.
+
+### Mesurer la difficulté réelle
+
+```bash
+npm run study                 # tous les niveaux
+npm run study -- 7            # le niveau 7
+npm run study -- 7 --seeds 40 # compare aussi 40 graines pour ce niveau
+```
+
+Le script (`scripts/study-levels.mjs`, logique dans `src/game/study.js`) fait jouer des milliers de parties à plusieurs joueurs simulés :
+
+- **parfait** : explore toutes les suites de choix ; donne le nombre minimum de places ;
+- **moyen** : envoie une équipe qui peut construire quand il en voit une, sinon une file au hasard ;
+- **au hasard** : touche n'importe quelle file ;
+- **automatique** : toujours la première équipe utile.
+
+Pour chacun : le pourcentage de parties gagnées sans acheter de place, et le nombre de places achetées (pubs ou noisettes). L'éditeur affiche aussi le taux du joueur moyen et la **difficulté ressentie** : normal au-dessus de 90 %, hard de 40 à 90 %, super hard en dessous. Le modèle pose les cubes instantanément : dans le vrai jeu, les colonnes se libèrent moins vite.
 
 ## Compiler l'application Android
 

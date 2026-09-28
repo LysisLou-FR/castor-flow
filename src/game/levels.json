@@ -1,0 +1,174 @@
+[
+  {
+    "name": "Cœur",
+    "difficulty": "normal",
+    "seed": 1,
+    "crewSize": 6,
+    "queues": 2,
+    "slots": 4,
+    "art": [
+      ".RR...RR.",
+      "RPRR.RRRR",
+      "RPRRRRRRR",
+      "RRRRRRRRR",
+      ".RRRRRRR.",
+      "..RRRRR..",
+      "...RRR...",
+      "....R...."
+    ]
+  },
+  {
+    "name": "Champignon",
+    "difficulty": "normal",
+    "seed": 2,
+    "crewSize": 6,
+    "queues": 3,
+    "slots": 5,
+    "art": [
+      "...RRRR...",
+      ".RRWWRRRR.",
+      "RRRWWRRWWR",
+      "RRRRRRRWWR",
+      "RWWRRRRRRR",
+      "RWWRRRRRRR",
+      "..WWWWWW..",
+      "..WKWWKW..",
+      "..WWWWWW..",
+      "...WWWW..."
+    ]
+  },
+  {
+    "name": "Sapin",
+    "difficulty": "normal",
+    "seed": 3,
+    "crewSize": 5,
+    "queues": 3,
+    "slots": 5,
+    "art": [
+      "....Y....",
+      "....G....",
+      "...GGG...",
+      "..GGRGG..",
+      "...GGG...",
+      "..GGGGG..",
+      ".GGYGGRG.",
+      "..GGGGG..",
+      ".GGGGGGG.",
+      "GRGGGGYGG",
+      "....N....",
+      "....N...."
+    ]
+  },
+  {
+    "name": "Maison",
+    "difficulty": "normal",
+    "seed": 4,
+    "crewSize": 6,
+    "queues": 3,
+    "slots": 5,
+    "art": [
+      ".....R.....",
+      "....RRR....",
+      "...RRRRR...",
+      "..RRRRRRR..",
+      ".RRRRRRRRR.",
+      "RRRRRRRRRRR",
+      ".WWWWWWWWW.",
+      ".WBBWWWBBW.",
+      ".WBBWWWBBW.",
+      ".WWWWNNWWW.",
+      ".WWWWNNWWW.",
+      "GGGGGGGGGGG"
+    ]
+  },
+  {
+    "name": "Castor",
+    "difficulty": "normal",
+    "seed": 5,
+    "crewSize": 7,
+    "queues": 3,
+    "slots": 5,
+    "art": [
+      "..NN....NN..",
+      ".NNNNNNNNNN.",
+      "NNNNNNNNNNNN",
+      "NNWKNNNNWKNN",
+      "NNKKNNNNKKNN",
+      "NNNNNNNNNNNN",
+      "NNNNTTTTNNNN",
+      "NNNTTKKTTNNN",
+      ".NNTTTTTTNN.",
+      "..NNNWWNNN..",
+      "...NNWWNN...",
+      "....NNNN...."
+    ]
+  },
+  {
+    "name": "Arc-en-ciel",
+    "difficulty": "normal",
+    "seed": 6,
+    "crewSize": 5,
+    "queues": 4,
+    "slots": 5,
+    "art": [
+      "....RRRRRR....",
+      "..RROOOOOORR..",
+      ".ROOYYYYYYOOR.",
+      "ROYYGGGGGGYYOR",
+      "OYGGBBBBBBGGYO",
+      "YGBB......BBGY",
+      "GB..........BG",
+      "B............B"
+    ]
+  },
+  {
+    "name": "Perroquet",
+    "difficulty": "hard",
+    "seed": 1,
+    "crewSize": 4,
+    "queues": 4,
+    "slots": 3,
+    "art": [
+      "....RRRR....",
+      "...RRRRRR...",
+      "..RRWWRRRR..",
+      "..RWKWRRRRR.",
+      "YYRWWRRRRRR.",
+      "YYYRRRRRRRR.",
+      ".YYRRRRRRRR.",
+      "...RRRYYRRR.",
+      "...RRYYBBRR.",
+      "...RRYBBBBR.",
+      "...RRBBGGBB.",
+      "....RBGGGBB.",
+      "NNNNNNNNNNNN",
+      ".....BGGB...",
+      ".....BGG....",
+      "......G....."
+    ]
+  },
+  {
+    "name": "Papillon",
+    "difficulty": "superhard",
+    "seed": 1,
+    "crewSize": 4,
+    "queues": 4,
+    "slots": 3,
+    "art": [
+      "...K.....K...",
+      "....K...K....",
+      ".OOO.KKK.OOO.",
+      "OYYOO.K.OOYYO",
+      "OYBYOOKOOYBYO",
+      "OYYOPOKOPOYYO",
+      ".OOPPOKOPPOO.",
+      "..OOO.K.OOO..",
+      "..RRPRKRPRR..",
+      ".RWWRRKRRWWR.",
+      ".RWBWRKRWBWR.",
+      ".RRWRRKRRWRR.",
+      "..RRR.K.RRR..",
+      "......K......"
+    ]
+  }
+]
